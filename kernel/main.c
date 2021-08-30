@@ -53,5 +53,7 @@ void KaliKernel(void) {
 
 	color_printk(COL_YELLOW,COL_BLACK,"Hello\t\t World!\n");
 
+	// i = 1/0;	/* 除0异常 */
+
 	while(1);
 }
