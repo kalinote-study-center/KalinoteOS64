@@ -56,7 +56,7 @@ entry64:
 	lretq
 
 go_to_kernel:
-	.quad	KaliMain
+	.quad	KaliKernel
 
 // 初始化页
 .align 8
@@ -114,8 +114,10 @@ GDT_Table:
 GDT_END:
 
 GDT_POINTER:
-GDT_LIMIT:	.word	GDT_END - GDT_Table - 1
-GDT_BASE:	.quad	GDT_Table
+GDT_LIMIT:
+	.word	GDT_END - GDT_Table - 1
+GDT_BASE:
+	.quad	GDT_Table
 
 // IDT_Table
 
@@ -126,8 +128,10 @@ IDT_Table:
 IDT_END:
 
 IDT_POINTER:
-IDT_LIMIT:	.word	IDT_END - IDT_Table - 1
-IDT_BASE:	.quad	IDT_Table
+IDT_LIMIT:
+	.word	IDT_END - IDT_Table - 1
+IDT_BASE:
+	.quad	IDT_Table
 
 // TSS64_Table
 
@@ -138,5 +142,7 @@ TSS64_Table:
 TSS64_END:
 
 TSS64_POINTER:
-TSS64_LIMIT:	.word	TSS64_END - TSS64_Table - 1
-TSS64_BASE:	.quad	TSS64_Table
+TSS64_LIMIT:
+	.word	TSS64_END - TSS64_Table - 1
+TSS64_BASE:
+	.quad	TSS64_Table
