@@ -1,5 +1,7 @@
 #include "lib.h"
 #include "printk.h"
+#include "gate.h"
+#include "trap.h"
 
 void KaliKernel(void) {
 	/* KalinoteOS2.0 内核程序入口 */
@@ -51,9 +53,26 @@ void KaliKernel(void) {
 		addr +=1;	
 	}
 
+	color_printk(COL_RED,COL_GREEN,"KalinoteOS2.0!\n");
 	color_printk(COL_YELLOW,COL_BLACK,"Hello\t\t World!\n");
+	
+	load_TR(8);
+
+	set_tss64(0xffff800000007c00,
+	0xffff800000007c00,
+	0xffff800000007c00,
+	0xffff800000007c00,
+	0xffff800000007c00,
+	0xffff800000007c00,
+	0xffff800000007c00,
+	0xffff800000007c00,
+	0xffff800000007c00,
+	0xffff800000007c00);
+	
+	sys_vector_init();
 
 	// i = 1/0;	/* 除0异常 */
+	i = *(int *)0xffff80000aa00000;		/* 页异常 */
 
 	while(1);
 }
