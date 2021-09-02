@@ -3,7 +3,6 @@
 #include "gate.h"
 #include "trap.h"
 #include "memory.h"
-#include "interrupt.c"
 
 extern char _text;
 extern char _etext;
@@ -16,7 +15,6 @@ void KaliKernel(void) {
 	/* KalinoteOS2.0 内核程序入口 */
 	int *addr = (int *)0xffff800000a00000;
 	int i;
-	// struct Page * page = NULL;		/* 测试使用 */
 
 	Pos.XResolution = 1440;
 	Pos.YResolution = 900;
@@ -61,23 +59,6 @@ void KaliKernel(void) {
 
 	color_printk(COL_RED,COL_BLACK,"interrupt init \n");
 	init_interrupt();
-
-	/* 测试代码 */
-	// color_printk(COL_RED,COL_BLACK,"memory_management_struct.bits_map:%#018lx\n",*memory_management_struct.bits_map);
-	// color_printk(COL_RED,COL_BLACK,"memory_management_struct.bits_map:%#018lx\n",*(memory_management_struct.bits_map + 1));
-
-	// page = alloc_pages(ZONE_NORMAL,64,PG_PTable_Maped | PG_Active | PG_Kernel);
-
-	// for(i = 0;i <= 64;i++)
-	// {
-		// color_printk(COL_INDIGO,COL_BLACK,"page%d\tattribute:%#018lx\taddress:%#018lx\t",i,(page + i)->attribute,(page + i)->PHY_address);
-		// i++;
-		// color_printk(COL_INDIGO,COL_BLACK,"page%d\tattribute:%#018lx\taddress:%#018lx\n",i,(page + i)->attribute,(page + i)->PHY_address);
-	// }
-
-	// color_printk(COL_RED,COL_BLACK,"memory_management_struct.bits_map:%#018lx\n",*memory_management_struct.bits_map);
-	// color_printk(COL_RED,COL_BLACK,"memory_management_struct.bits_map:%#018lx\n",*(memory_management_struct.bits_map + 1));
-	/* 测试代码 */
 
 	while(1);
 }
