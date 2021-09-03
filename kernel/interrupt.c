@@ -34,17 +34,20 @@
 	"movq	%rdx,	%es;	\n\t"				/* 保存所有寄存器 */
 	
 #define IRQ_NAME2(nr) nr##_interrupt(void)
+
 #define IRQ_NAME(nr) IRQ_NAME2(IRQ##nr)
-#define Build_IRQ(nr)							\
-void IRQ_NAME(nr);						\
+
+#define Build_IRQ(nr)										\
+void IRQ_NAME(nr);											\
 __asm__ (	SYMBOL_NAME_STR(IRQ)#nr"_interrupt:		\n\t"	\
-			"pushq	$0x00				\n\t"	\
-			SAVE_ALL					\
-			"movq	%rsp,	%rdi			\n\t"	\
+			"pushq	$0x00							\n\t"	\
+			SAVE_ALL										\
+			"movq	%rsp,	%rdi					\n\t"	\
 			"leaq	ret_from_intr(%rip),	%rax	\n\t"	\
-			"pushq	%rax				\n\t"	\
-			"movq	$"#nr",	%rsi			\n\t"	\
-			"jmp	do_IRQ	\n\t");
+			"pushq	%rax							\n\t"	\
+			"movq	$"#nr",	%rsi					\n\t"	\
+			"jmp	do_IRQ	\n\t"							\
+		);
 
 Build_IRQ(0x20)
 Build_IRQ(0x21)
@@ -99,7 +102,7 @@ void (* interrupt[24])(void)=
 	IRQ0x37_interrupt,
 };
 
-void init_interrupt(void) {
+void init_interrupt() {
 	int i;
 	for(i = 32;i < 56;i++) {
 		set_intr_gate(i , 2 , interrupt[i - 32]);

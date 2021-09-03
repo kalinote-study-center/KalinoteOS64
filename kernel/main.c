@@ -3,6 +3,7 @@
 #include "gate.h"
 #include "trap.h"
 #include "memory.h"
+#include "interrupt.h"
 
 extern char _text;
 extern char _etext;
@@ -27,8 +28,6 @@ void KaliKernel(void) {
 
 	Pos.FB_addr = (int *)0xffff800000a00000;
 	Pos.FB_length = (Pos.XResolution * Pos.YResolution * 4 + PAGE_4K_SIZE - 1) & PAGE_4K_MASK;
-
-	color_printk(COL_RED,COL_GREEN,"KalinoteOS2.0!\n");
 	
 	load_TR(8);
 
