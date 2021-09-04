@@ -52,51 +52,7 @@ typedef struct {unsigned long pdt;} pdt_t;
 typedef struct {unsigned long pt;} pt_t;
 #define mk_pt(addr,attr)	((unsigned long)(addr) | (unsigned long)(attr))
 #define set_pt(ptptr,ptval)		(*(ptptr) = (ptval))
-/* 所有页面区域选择 */
-#define ZONE_DMA	(1 << 0)
-#define ZONE_NORMAL	(1 << 1)
-#define ZONE_UNMAPED	(1 << 2)
 
-/* 结构页面属性(alloc_页面标志) */
-#define PG_PTable_Maped	(1 << 0)
-#define PG_Kernel_Init	(1 << 1)
-#define PG_Referenced	(1 << 2)
-#define PG_Dirty	(1 << 3)
-#define PG_Active	(1 << 4)
-#define PG_Up_To_Date	(1 << 5)
-#define PG_Device	(1 << 6)
-#define PG_Kernel	(1 << 7)
-#define PG_K_Share_To_U	(1 << 8)
-#define PG_Slab		(1 << 9)
-struct Zone
-{
-	struct Page * 	pages_group;
-	unsigned long	pages_length;
-	
-	unsigned long	zone_start_address;
-	unsigned long	zone_end_address;
-	unsigned long	zone_length;
-	unsigned long	attribute;
-
-	struct Global_Memory_Descriptor * GMD_struct;
-
-	unsigned long	page_using_count;
-	unsigned long	page_free_count;
-
-	unsigned long	total_pages_link;
-};
-struct Page {
-	struct Zone *	zone_struct;		/* 指向本页所属区域结构体 */
-	unsigned long	PHY_address;		/* 页的物理地址 */
-	unsigned long	attribute;			/* 页的属性 */
-	unsigned long	reference_count;	/* 描述该页引用次数 */
-	unsigned long	age;				/* 描述该页创建时间 */
-};
-int ZONE_DMA_INDEX	= 0;
-int ZONE_NORMAL_INDEX	= 0;	//low 1GB RAM ,was mapped in pagetable
-int ZONE_UNMAPED_INDEX	= 0;	//above 1GB RAM,unmapped in pagetable
-
-#define MAX_NR_ZONES	10	//max zone
 
 unsigned long * Global_CR3 = NULL;
 
@@ -125,6 +81,92 @@ struct Global_Memory_Descriptor {
 
 	unsigned long	end_of_struct;	
 };
+
+////alloc_pages zone_select
+
+//
+#define ZONE_DMA	(1 << 0)
+
+//
+#define ZONE_NORMAL	(1 << 1)
+
+//
+#define ZONE_UNMAPED	(1 << 2)
+
+////struct page attribute (alloc_pages flags)
+
+//
+#define PG_PTable_Maped	(1 << 0)
+
+//
+#define PG_Kernel_Init	(1 << 1)
+
+//
+#define PG_Referenced	(1 << 2)
+
+//
+#define PG_Dirty	(1 << 3)
+
+//
+#define PG_Active	(1 << 4)
+
+//
+#define PG_Up_To_Date	(1 << 5)
+
+//
+#define PG_Device	(1 << 6)
+
+//
+#define PG_Kernel	(1 << 7)
+
+//
+#define PG_K_Share_To_U	(1 << 8)
+
+//
+#define PG_Slab		(1 << 9)
+
+struct Page
+{
+	struct Zone *	zone_struct;
+	unsigned long	PHY_address;
+	unsigned long	attribute;
+
+	unsigned long	reference_count;
+	
+	unsigned long	age;
+};
+
+
+//// each zone index
+
+int ZONE_DMA_INDEX	= 0;
+int ZONE_NORMAL_INDEX	= 0;	//low 1GB RAM ,was mapped in pagetable
+int ZONE_UNMAPED_INDEX	= 0;	//above 1GB RAM,unmapped in pagetable
+
+#define MAX_NR_ZONES	10	//max zone
+
+/*
+
+*/
+
+struct Zone
+{
+	struct Page * 	pages_group;
+	unsigned long	pages_length;
+	
+	unsigned long	zone_start_address;
+	unsigned long	zone_end_address;
+	unsigned long	zone_length;
+	unsigned long	attribute;
+
+	struct Global_Memory_Descriptor * GMD_struct;
+
+	unsigned long	page_using_count;
+	unsigned long	page_free_count;
+
+	unsigned long	total_pages_link;
+};
+
 
 extern struct Global_Memory_Descriptor memory_management_struct;
 unsigned long page_init(struct Page * page,unsigned long flags);

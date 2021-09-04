@@ -14,6 +14,7 @@
 #define SPECIAL	32		/* 0x */
 #define SMALL	64		/* use 'abcdef' instead of 'ABCDEF' */
 
+#define is_digit(c)	((c) >= '0' && (c) <= '9')
 #define COL_WHITE 	0x00ffffff		//白
 #define COL_BLACK 	0x00000000		//黑
 #define COL_RED		0x00ff0000		//红
@@ -23,12 +24,6 @@
 #define COL_BLUE	0x000000ff		//蓝
 #define COL_INDIGO	0x0000ffff		//靛
 #define COL_PURPLE	0x008000ff		//紫
-
-#define is_digit(c)	((c) >= '0' && (c) <= '9')
-#define do_div(n,base) ({ \
-int __res; \
-__asm__("divq %%rcx":"=a" (n),"=d" (__res):"0" (n),"1" (0),"c" (base)); \
-__res; })
 
 extern unsigned char font_ascii[256][16];		/* ascii字符像素映射(font.h) */
 
@@ -53,6 +48,11 @@ struct position {
 void putchar(unsigned int * fb,int Xsize,int x,int y,
 	unsigned int FRcolor,unsigned int BKcolor,unsigned char font);
 int skip_atoi(const char **s);
+#define do_div(n,base) ({ \
+int __res; \
+__asm__("divq %%rcx":"=a" (n),"=d" (__res):"0" (n),"1" (0),"c" (base)); \
+__res; })
+static char * number(char * str, long num, int base, int size, int precision ,int type);
 int vsprintf(char * buf,const char *fmt, va_list args);
 int color_printk(unsigned int FRcolor,unsigned int BKcolor,const char * fmt,...);		/* 彩色内核打印 */
 

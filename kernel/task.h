@@ -33,8 +33,6 @@ extern char _end;
 
 extern unsigned long _stack_start;
 
-extern void ret_from_intr();
-
 #define TASK_RUNNING		(1 << 0)
 #define TASK_INTERRUPTIBLE	(1 << 1)
 #define	TASK_UNINTERRUPTIBLE	(1 << 2)

@@ -56,7 +56,7 @@ Label_Start:
 ; 设置光标位置
 	mov ax,0200h
 	mov bx,0000h
-	mov cx,0000h
+	mov dx,0000h
 	int 10h
 	
 ; 显示start booting
@@ -68,7 +68,7 @@ Label_Start:
 	mov ax,ds
 	mov es,ax
 	pop ax
-	mov bp,StratBootMessage
+	mov bp,StartBootMessage
 	int 10h
 	
 ; 软盘复位
@@ -265,12 +265,10 @@ SectorNo			dw	0
 Odd					db	0
 
 ; 显示信息
-StratBootMessage:
-	db "Start Boot"
-NoLoaderMessage:
-	db "ERROR:No LOADER Found"
-LoaderFileName:
-	db "loader  bin",0
+StartBootMessage:	db	"Start Boot"
+NoLoaderMessage:	db	"ERROR:No LOADER Found"
+LoaderFileName:		db	"loader  bin",0
+
 
 ; 填充0，直到510字节(最后两个字节是固定标识符)
 	times 510-($-$$) db 0

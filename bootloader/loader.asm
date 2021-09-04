@@ -70,7 +70,7 @@ Label_Start:
 
 	cli
 
-	db	0x66
+
 	lgdt	[GdtPtr]	
 
 	mov	eax,	cr0
@@ -236,6 +236,7 @@ Label_Mov_Kernel:	;------------------
 	mov	dx,	RootDirSectors
 	add	ax,	dx
 	add	ax,	SectorBalance
+;	add	bx,	[BPB_BytesPerSec]
 
 	jmp	Label_Go_On_Loading_File
 
@@ -260,7 +261,7 @@ KillMotor:
 	mov	ax,	1301h
 	mov	bx,	000Fh
 	mov	dx,	0400h		;row 4
-	mov	cx,	24
+	mov	cx,	44
 	push	ax
 	mov	ax,	ds
 	mov	es,	ax
@@ -281,12 +282,15 @@ Label_Get_Mem_Struct:
 	int	15h
 	jc	Label_Get_Mem_Fail
 	add	di,	20
+	inc	dword	[MemStructNumber]
 
 	cmp	ebx,	0
 	jne	Label_Get_Mem_Struct
 	jmp	Label_Get_Mem_OK
 
 Label_Get_Mem_Fail:
+
+	mov	dword	[MemStructNumber],	0
 
 	mov	ax,	1301h
 	mov	bx,	008Ch
@@ -298,7 +302,6 @@ Label_Get_Mem_Fail:
 	pop	ax
 	mov	bp,	GetMemStructErrMessage
 	int	10h
-	jmp	$
 
 Label_Get_Mem_OK:
 	
@@ -416,6 +419,7 @@ Label_SVGA_Mode_Info_Get:
 
 	jnz	Label_SVGA_Mode_Info_FAIL	
 
+	inc	dword		[SVGAModeCounter]
 	add	esi,	2
 	add	edi,	0x100
 
@@ -463,11 +467,7 @@ Label_SVGA_Mode_Info_Finish:
 ; 初始化GDT IDT，切换到保护模式
 
 	cli			; 关闭中断
-
-	db	0x66
 	lgdt	[GdtPtr]
-
-;	db	0x66
 ;	lidt	[IDT_POINTER]
 
 	mov	eax,	cr0
@@ -525,7 +525,6 @@ GO_TO_TMP_Protect:
 
 ; 加载 GDTR
 
-	db	0x66
 	lgdt	[GdtPtr64]
 	mov	ax,	0x10
 	mov	ds,	ax
@@ -589,7 +588,7 @@ no_support:
 
 ; 从软盘读一个扇区
 
-[SECTION .s16lib]
+[SECTION .s116]
 [BITS 16]
 
 Func_ReadOneSector:
@@ -719,6 +718,9 @@ SectorNo		dw	0
 Odd			db	0
 OffsetOfKernelFileCount	dd	OffsetOfKernelFile
 
+MemStructNumber		dd	0
+
+SVGAModeCounter		dd	0
 DisplayPosition		dd	0
 
 ; 显示信息
@@ -726,7 +728,7 @@ DisplayPosition		dd	0
 StartLoaderMessage:	db	"Start Loader"
 NoLoaderMessage:	db	"ERROR:No KERNEL Found"
 KernelFileName:		db	"kernel  bin",0
-StartGetMemStructMessage:	db	"Start Get Memory Struct."
+StartGetMemStructMessage:	db	"Start Get Memory Struct (address,size,type)."
 GetMemStructErrMessage:	db	"Get Memory Struct ERROR"
 GetMemStructOKMessage:	db	"Get Memory Struct SUCCESSFUL!"
 

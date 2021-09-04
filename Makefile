@@ -29,3 +29,4 @@ clean:
 	make -C bootloader		clean
 	make -C kernel			clean
 	rm -rf *.vfd
+	

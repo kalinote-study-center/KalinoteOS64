@@ -6,6 +6,8 @@
 #include "interrupt.h"
 #include "task.h"
 
+/* 图形缓冲区映射地址为0xffff800000a00000 */
+
 struct Global_Memory_Descriptor memory_management_struct = {{0},0};
 
 void KaliKernel(void) {
@@ -25,19 +27,10 @@ void KaliKernel(void) {
 	Pos.FB_addr = (int *)0xffff800000a00000;
 	Pos.FB_length = (Pos.XResolution * Pos.YResolution * 4 + PAGE_4K_SIZE - 1) & PAGE_4K_MASK;
 	
-	load_TR(8);
+	load_TR(10);
 
-	set_tss64(_stack_start,
-	_stack_start,
-	_stack_start,
-	0xffff800000007c00,
-	0xffff800000007c00,
-	0xffff800000007c00,
-	0xffff800000007c00,
-	0xffff800000007c00,
-	0xffff800000007c00,
-	0xffff800000007c00);
-	
+	set_tss64(_stack_start, _stack_start, _stack_start, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00);
+
 	sys_vector_init();
 
 	memory_management_struct.start_code = (unsigned long)& _text;
