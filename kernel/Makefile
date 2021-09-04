@@ -1,6 +1,6 @@
 CFLAGS = -fno-stack-protector -mcmodel=large -fno-builtin -m64
 
-OBJ= head.o main.o printk.o trap.o entry.o memory.o interrupt.o
+OBJ= head.o main.o printk.o trap.o entry.o memory.o interrupt.o task.o
 
 all: system
 	objcopy -I elf64-x86-64 -S -R ".eh_frame" -R ".comment" -O binary system kernel.bin

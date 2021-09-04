@@ -1,8 +1,8 @@
+#include "linkage.h"
+
 .section .text
 
-.globl _start
-
-_start:
+ENTRY(_start)
 
 	mov	$0x10,	%ax
 	mov	%ax,	%ds
@@ -48,7 +48,7 @@ entry64:
 	movq	%rax,	%es
 	movq	%rax,	%gs
 	movq	%rax,	%ss
-	movq	$0xffff800000007E00,	%rsp		/* rsp address */
+	movq	_stack_start(%rip),	%rsp		/* rsp address */
 
 setup_IDT:							/* 设置中断向量表 */
 	leaq	ignore_int(%rip),	%rdx
@@ -169,6 +169,9 @@ Loop:
 
 int_msg:
 	.asciz "Unknown interrupt or fault at RIP\n"
+
+ENTRY(_stack_start)
+	.quad	init_task_union + 32768
 
 // 初始化页
 .align 8

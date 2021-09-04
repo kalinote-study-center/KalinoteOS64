@@ -5,6 +5,7 @@
 #include "printk.h"
 #include "memory.h"
 #include "gate.h"
+#include "ptrace.h"
 
 #define SAVE_ALL				\
 	"cld;			\n\t"		\
@@ -129,13 +130,14 @@ void init_interrupt() {
 	sti();
 }
 
-void do_IRQ(unsigned long regs,unsigned long nr) {
+void do_IRQ(struct pt_regs * regs,unsigned long nr) {
 	//regs:rsp,nr
 	unsigned char x;
-	color_printk(COL_RED,COL_BLACK,"do_IRQ:%#08x\t",nr);
+	color_printk(COL_RED,COL_BLACK,"do_IRQ:%#018lx\t",nr);
 	x = io_in8(0x60);
-	color_printk(COL_RED,COL_BLACK,"key code:%#08x\n",x);
+	color_printk(COL_RED,COL_BLACK,"key code:%#018lx\t",x);
 	io_out8(0x20,0x20);
+	color_printk(COL_RED,COL_BLACK,"<RIP:%#018lx\tRSP:%#018lx>\n",regs->rip,regs->rsp);
 }
 
 

@@ -22,6 +22,9 @@ bootloader:
 kernel:
 	make -C kernel
 	
+run: all
+	tools/bochsdbg.exe
+	
 clean:
 	make -C bootloader		clean
 	make -C kernel			clean

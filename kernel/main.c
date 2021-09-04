@@ -4,11 +4,7 @@
 #include "trap.h"
 #include "memory.h"
 #include "interrupt.h"
-
-extern char _text;
-extern char _etext;
-extern char _edata;
-extern char _end;
+#include "task.h"
 
 struct Global_Memory_Descriptor memory_management_struct = {{0},0};
 
@@ -31,9 +27,9 @@ void KaliKernel(void) {
 	
 	load_TR(8);
 
-	set_tss64(0xffff800000007c00,
-	0xffff800000007c00,
-	0xffff800000007c00,
+	set_tss64(_stack_start,
+	_stack_start,
+	_stack_start,
 	0xffff800000007c00,
 	0xffff800000007c00,
 	0xffff800000007c00,
@@ -58,6 +54,9 @@ void KaliKernel(void) {
 
 	color_printk(COL_RED,COL_BLACK,"interrupt init \n");
 	init_interrupt();
+
+	color_printk(COL_RED,COL_BLACK,"task_init \n");
+	task_init();
 
 	while(1);
 }

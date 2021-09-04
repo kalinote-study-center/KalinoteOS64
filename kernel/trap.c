@@ -1,95 +1,63 @@
-/* 异常处理 */
 #include "trap.h"
 #include "gate.h"
+#include "ptrace.h"
 
-void do_divide_error(unsigned long rsp,unsigned long error_code) {
-	/* 除零异常 */
-	unsigned long * p = NULL;
-	p = (unsigned long *)(rsp + 0x98);
-	color_printk(COL_RED,COL_BLACK,"do_divide_error(0),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , rsp , *p);
+void do_divide_error(struct pt_regs * regs,unsigned long error_code) {
+	color_printk(COL_RED,COL_BLACK,"do_divide_error(0),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , regs->rsp , regs->rip);
 	while(1);
 }
 
-void do_debug(unsigned long rsp,unsigned long error_code) {
-	/* 调试错误 */
-	unsigned long * p = NULL;
-	p = (unsigned long *)(rsp + 0x98);
-	color_printk(COL_RED,COL_BLACK,"do_debug(1),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , rsp , *p);
+
+void do_debug(struct pt_regs * regs,unsigned long error_code) {
+	color_printk(COL_RED,COL_BLACK,"do_debug(1),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , regs->rsp , regs->rip);
 	while(1);
 }
 
-void do_nmi(unsigned long rsp,unsigned long error_code) {
-	/* NMI中断 */
-	unsigned long * p = NULL;
-	p = (unsigned long *)(rsp + 0x98);
-	color_printk(COL_RED,COL_BLACK,"do_nmi(2),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , rsp , *p);
+void do_nmi(struct pt_regs * regs,unsigned long error_code) {
+	color_printk(COL_RED,COL_BLACK,"do_nmi(2),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , regs->rsp , regs->rip);
 	while(1);
 }
 
-void do_int3(unsigned long rsp,unsigned long error_code) {
-	/* INT 3指令断点异常 */
-	unsigned long * p = NULL;
-	p = (unsigned long *)(rsp + 0x98);
-	color_printk(COL_RED,COL_BLACK,"do_int3(3),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , rsp , *p);
+void do_int3(struct pt_regs * regs,unsigned long error_code) {
+	color_printk(COL_RED,COL_BLACK,"do_int3(3),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , regs->rsp , regs->rip);
 	while(1);
 }
 
-void do_overflow(unsigned long rsp,unsigned long error_code) {
-	/* INTO指令溢出异常 */
-	unsigned long * p = NULL;
-	p = (unsigned long *)(rsp + 0x98);
-	color_printk(COL_RED,COL_BLACK,"do_overflow(4),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , rsp , *p);
+void do_overflow(struct pt_regs * regs,unsigned long error_code) {
+	color_printk(COL_RED,COL_BLACK,"do_overflow(4),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , regs->rsp , regs->rip);
 	while(1);
 }
 
-void do_bounds(unsigned long rsp,unsigned long error_code) {
-	/* BOUND指令越界异常 */
-	unsigned long * p = NULL;
-	p = (unsigned long *)(rsp + 0x98);
-	color_printk(COL_RED,COL_BLACK,"do_bounds(5),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , rsp , *p);
+void do_bounds(struct pt_regs * regs,unsigned long error_code) {
+	color_printk(COL_RED,COL_BLACK,"do_bounds(5),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , regs->rsp , regs->rip);
 	while(1);
 }
 
-void do_undefined_opcode(unsigned long rsp,unsigned long error_code) {
-	/* 无效机器码 */
-	unsigned long * p = NULL;
-	p = (unsigned long *)(rsp + 0x98);
-	color_printk(COL_RED,COL_BLACK,"do_undefined_opcode(6),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , rsp , *p);
+void do_undefined_opcode(struct pt_regs * regs,unsigned long error_code) {
+	color_printk(COL_RED,COL_BLACK,"do_undefined_opcode(6),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , regs->rsp , regs->rip);
 	while(1);
 }
 
-void do_dev_not_available(unsigned long rsp,unsigned long error_code) {
-	/* 设备异常(FPU不存在) */
-	unsigned long * p = NULL;
-	p = (unsigned long *)(rsp + 0x98);
-	color_printk(COL_RED,COL_BLACK,"do_dev_not_available(7),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , rsp , *p);
+void do_dev_not_available(struct pt_regs * regs,unsigned long error_code) {
+	color_printk(COL_RED,COL_BLACK,"do_dev_not_available(7),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , regs->rsp , regs->rip);
 	while(1);
 }
 
-void do_double_fault(unsigned long rsp,unsigned long error_code) {
-	/* 双重错误 */
-	unsigned long * p = NULL;
-	p = (unsigned long *)(rsp + 0x98);
-	color_printk(COL_RED,COL_BLACK,"do_double_fault(8),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , rsp , *p);
+void do_double_fault(struct pt_regs * regs,unsigned long error_code) {
+	color_printk(COL_RED,COL_BLACK,"do_double_fault(8),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , regs->rsp , regs->rip);
 	while(1);
 }
 
-void do_coprocessor_segment_overrun(unsigned long rsp,unsigned long error_code) {
-	/* 协处理器段越界 */
-	unsigned long * p = NULL;
-	p = (unsigned long *)(rsp + 0x98);
-	color_printk(COL_RED,COL_BLACK,"do_coprocessor_segment_overrun(9),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , rsp , *p);
+void do_coprocessor_segment_overrun(struct pt_regs * regs,unsigned long error_code) {
+	color_printk(COL_RED,COL_BLACK,"do_coprocessor_segment_overrun(9),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , regs->rsp , regs->rip);
 	while(1);
 }
 
-void do_invalid_TSS(unsigned long rsp,unsigned long error_code) {
-	/* 无效TSS段 */
-	unsigned long * p = NULL;
-	p = (unsigned long *)(rsp + 0x98);
-	color_printk(COL_RED,COL_BLACK,"do_invalid_TSS(10),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , rsp , *p);
+void do_invalid_TSS(struct pt_regs * regs,unsigned long error_code) {
+	color_printk(COL_RED,COL_BLACK,"do_invalid_TSS(10),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , regs->rsp , regs->rip);
 
 	if(error_code & 0x01)
-		color_printk(COL_RED,COL_BLACK,"The exception occurCOL_RED during delivery of an event external to the program,such as an interrupt or an earlier exception.\n");
+		color_printk(COL_RED,COL_BLACK,"The exception occurred during delivery of an event external to the program,such as an interrupt or an earlier exception.\n");
 
 	if(error_code & 0x02)
 		color_printk(COL_RED,COL_BLACK,"Refers to a gate descriptor in the IDT;\n");
@@ -107,14 +75,11 @@ void do_invalid_TSS(unsigned long rsp,unsigned long error_code) {
 	while(1);
 }
 
-void do_segment_not_present(unsigned long rsp,unsigned long error_code) {
-	/* 段不存在 */
-	unsigned long * p = NULL;
-	p = (unsigned long *)(rsp + 0x98);
-	color_printk(COL_RED,COL_BLACK,"do_segment_not_present(11),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , rsp , *p);
+void do_segment_not_present(struct pt_regs * regs,unsigned long error_code) {
+	color_printk(COL_RED,COL_BLACK,"do_segment_not_present(11),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , regs->rsp , regs->rip);
 
 	if(error_code & 0x01)
-		color_printk(COL_RED,COL_BLACK,"The exception occurCOL_RED during delivery of an event external to the program,such as an interrupt or an earlier exception.\n");
+		color_printk(COL_RED,COL_BLACK,"The exception occurred during delivery of an event external to the program,such as an interrupt or an earlier exception.\n");
 
 	if(error_code & 0x02)
 		color_printk(COL_RED,COL_BLACK,"Refers to a gate descriptor in the IDT;\n");
@@ -132,14 +97,11 @@ void do_segment_not_present(unsigned long rsp,unsigned long error_code) {
 	while(1);
 }
 
-void do_stack_segment_fault(unsigned long rsp,unsigned long error_code) {
-	/* SS段错误 */
-	unsigned long * p = NULL;
-	p = (unsigned long *)(rsp + 0x98);
-	color_printk(COL_RED,COL_BLACK,"do_stack_segment_fault(12),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , rsp , *p);
+void do_stack_segment_fault(struct pt_regs * regs,unsigned long error_code) {
+	color_printk(COL_RED,COL_BLACK,"do_stack_segment_fault(12),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , regs->rsp , regs->rip);
 
 	if(error_code & 0x01)
-		color_printk(COL_RED,COL_BLACK,"The exception occurCOL_RED during delivery of an event external to the program,such as an interrupt or an earlier exception.\n");
+		color_printk(COL_RED,COL_BLACK,"The exception occurred during delivery of an event external to the program,such as an interrupt or an earlier exception.\n");
 
 	if(error_code & 0x02)
 		color_printk(COL_RED,COL_BLACK,"Refers to a gate descriptor in the IDT;\n");
@@ -157,14 +119,11 @@ void do_stack_segment_fault(unsigned long rsp,unsigned long error_code) {
 	while(1);
 }
 
-void do_general_protection(unsigned long rsp,unsigned long error_code) {
-	/* 通用保护异常 */
-	unsigned long * p = NULL;
-	p = (unsigned long *)(rsp + 0x98);
-	color_printk(COL_RED,COL_BLACK,"do_general_protection(13),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , rsp , *p);
+void do_general_protection(struct pt_regs * regs,unsigned long error_code) {
+	color_printk(COL_RED,COL_BLACK,"do_general_protection(13),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , regs->rsp , regs->rip);
 
 	if(error_code & 0x01)
-		color_printk(COL_RED,COL_BLACK,"The exception occurCOL_RED during delivery of an event external to the program,such as an interrupt or an earlier exception.\n");
+		color_printk(COL_RED,COL_BLACK,"The exception occurred during delivery of an event external to the program,such as an interrupt or an earlier exception.\n");
 
 	if(error_code & 0x02)
 		color_printk(COL_RED,COL_BLACK,"Refers to a gate descriptor in the IDT;\n");
@@ -182,15 +141,12 @@ void do_general_protection(unsigned long rsp,unsigned long error_code) {
 	while(1);
 }
 
-void do_page_fault(unsigned long rsp,unsigned long error_code) {
-	/* 页错误 */
-	unsigned long * p = NULL;
+void do_page_fault(struct pt_regs * regs,unsigned long error_code) {
 	unsigned long cr2 = 0;
 
 	__asm__	__volatile__("movq	%%cr2,	%0":"=r"(cr2)::"memory");
 
-	p = (unsigned long *)(rsp + 0x98);
-	color_printk(COL_RED,COL_BLACK,"do_page_fault(14),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , rsp , *p);
+	color_printk(COL_RED,COL_BLACK,"do_page_fault(14),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , regs->rsp , regs->rip);
 
 	if(!(error_code & 0x01))
 		color_printk(COL_RED,COL_BLACK,"Page Not-Present,\t");
@@ -218,43 +174,28 @@ void do_page_fault(unsigned long rsp,unsigned long error_code) {
 	while(1);
 }
 
-void do_x87_FPU_error(unsigned long rsp,unsigned long error_code) {
-	/* x87 FPU错误 */
-	unsigned long * p = NULL;
-	p = (unsigned long *)(rsp + 0x98);
-	color_printk(COL_RED,COL_BLACK,"do_x87_FPU_error(16),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , rsp , *p);
+void do_x87_FPU_error(struct pt_regs * regs,unsigned long error_code) {
+	color_printk(COL_RED,COL_BLACK,"do_x87_FPU_error(16),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , regs->rsp , regs->rip);
 	while(1);
 }
 
-void do_alignment_check(unsigned long rsp,unsigned long error_code) {
-	/* 对齐检测 */
-	unsigned long * p = NULL;
-	p = (unsigned long *)(rsp + 0x98);
-	color_printk(COL_RED,COL_BLACK,"do_alignment_check(17),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , rsp , *p);
+void do_alignment_check(struct pt_regs * regs,unsigned long error_code) {
+	color_printk(COL_RED,COL_BLACK,"do_alignment_check(17),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , regs->rsp , regs->rip);
 	while(1);
 }
 
-void do_machine_check(unsigned long rsp,unsigned long error_code) {
-	/* 机器检测 */
-	unsigned long * p = NULL;
-	p = (unsigned long *)(rsp + 0x98);
-	color_printk(COL_RED,COL_BLACK,"do_machine_check(18),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , rsp , *p);
+void do_machine_check(struct pt_regs * regs,unsigned long error_code) {
+	color_printk(COL_RED,COL_BLACK,"do_machine_check(18),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , regs->rsp , regs->rip);
 	while(1);
 }
 
-void do_SIMD_exception(unsigned long rsp,unsigned long error_code) {
-	/* SIMD浮点异常 */
-	unsigned long * p = NULL;
-	p = (unsigned long *)(rsp + 0x98);
-	color_printk(COL_RED,COL_BLACK,"do_SIMD_exception(19),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , rsp , *p);
+void do_SIMD_exception(struct pt_regs * regs,unsigned long error_code) {
+	color_printk(COL_RED,COL_BLACK,"do_SIMD_exception(19),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , regs->rsp , regs->rip);
 	while(1);
 }
 
-void do_virtualization_exception(unsigned long rsp,unsigned long error_code) {
-	/* 虚拟化异常 */
-	unsigned long * p = NULL;
-	p = (unsigned long *)(rsp + 0x98);
-	color_printk(COL_RED,COL_BLACK,"do_virtualization_exception(20),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , rsp , *p);
+void do_virtualization_exception(struct pt_regs * regs,unsigned long error_code) {
+	color_printk(COL_RED,COL_BLACK,"do_virtualization_exception(20),ERROR_CODE:%#018lx,RSP:%#018lx,RIP:%#018lx\n",error_code , regs->rsp , regs->rip);
 	while(1);
 }
 
