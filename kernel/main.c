@@ -7,14 +7,17 @@
 #include "task.h"
 #include "cpu.h"
 
-/* 图形缓冲区映射地址为0xffff800000a00000 */
+/* 图形缓冲区映射地址为0xffff800003000000 */
 
 struct Global_Memory_Descriptor memory_management_struct = {{0},0};
 
 void KaliKernel(void) {
 	/* KalinoteOS2.0 内核程序入口 */
-	int *addr = (int *)0xffff800000a00000;
+	int *addr = (int *)0xffff800003000000;
 	int i;
+	struct Page * page = NULL;
+	void * tmp = NULL;
+	struct Slab *slab = NULL;
 
 	Pos.XResolution = 1440;
 	Pos.YResolution = 900;
@@ -25,7 +28,7 @@ void KaliKernel(void) {
 	Pos.XCharSize = 8;
 	Pos.YCharSize = 16;
 
-	Pos.FB_addr = (int *)0xffff800000a00000;
+	Pos.FB_addr = (int *)0xffff800003000000;
 	Pos.FB_length = (Pos.XResolution * Pos.YResolution * 4 + PAGE_4K_SIZE - 1) & PAGE_4K_MASK;
 	
 	load_TR(10);
@@ -48,11 +51,21 @@ void KaliKernel(void) {
 	color_printk(COL_RED,COL_BLACK,"memory init \n");
 	init_memory();
 
+	color_printk(COL_RED,COL_BLACK,"slab init \n");
+	slab_init();
+
+	color_printk(COL_RED,COL_BLACK,"frame buffer init \n");
+	frame_buffer_init();
+	color_printk(COL_WHITE,COL_BLACK,"frame_buffer_init() is OK \n");
+
+	color_printk(COL_RED,COL_BLACK,"pagetable init \n");	
+	pagetable_init();
+	
 	color_printk(COL_RED,COL_BLACK,"interrupt init \n");
 	init_interrupt();
 
-	color_printk(COL_RED,COL_BLACK,"task_init \n");
-	task_init();
+	// color_printk(COL_RED,COL_BLACK,"task_init \n");
+	// task_init();
 
 	while(1);
 }
