@@ -10,25 +10,25 @@ BaseOfStack		equ		0x7c00
 BaseOfLoader	equ		0x1000
 OffsetOfLoader	equ		0x00
 
-RootDirSectors			equ	14
-SectorNumOfRootDirStart	equ	25
-SectorNumOfFAT1Start	equ	1
-SectorBalance			equ	23
+RootDirSectors		equ		14
+SectorNumOfRootDirStart		equ		19
+SectorNumOfFAT1Start		equ		1
+SectorBalance		equ		17	
 
 ; FAT12格式
 	jmp	short Label_Start				; 跳转到启动代码
 	nop
 	BS_OEMName		db	'KALIBOOT'			; 启动区名称(8字节)
-	BPB_BytesPerSec	dw	0x200				; 每个扇区大小为0x200
-	BPB_SecPerClus	db	0x8					; 每个簇大小为一个扇区
-	BPB_RsvdSecCnt	dw	0x1					; FAT起始位置(boot记录占用扇区数)
-	BPB_NumFATs		db	0x2                 ; FAT表数
-	BPB_RootEntCnt	dw	0xe0				; 根目录最大文件数
-	BPB_TotSec16	dw	0x7d82				; 磁盘大小(总扇区数，如果这里扇区数为0，则由下面给出)
+	BPB_BytesPerSec	dw	512					; 每个扇区大小为512
+	BPB_SecPerClus	db	1					; 每个簇大小为一个扇区
+	BPB_RsvdSecCnt	dw	1					; FAT起始位置(boot记录占用扇区数)
+	BPB_NumFATs		db	2                   ; FAT表数
+	BPB_RootEntCnt	dw	224					; 根目录最大文件数
+	BPB_TotSec16	dw	2880				; 磁盘大小(总扇区数，如果这里扇区数为0，则由下面给出)
 	BPB_Media		db	0xf0                ; 磁盘种类
-	BPB_FATSz16		dw	0xc                 ; FAT长度(每个FAT表占用扇区数)
-	BPB_SecPerTrk	dw	0x3f				; 每个磁道的扇区数
-	BPB_NumHeads	dw	0xff				; 磁头数(面数)
+	BPB_FATSz16		dw	9                   ; FAT长度(每个FAT表占用扇区数)
+	BPB_SecPerTrk	dw	18					; 每个磁道的扇区数
+	BPB_NumHeads	dw	2					; 磁头数(面数)
 	BPB_HiddSec		dd	0                   ; 不使用分区(隐藏扇区数)
 	BPB_TotSec32	dd	0					; 重写一遍磁盘大小(如果上面的扇区数为0，则由这里给出)
 	BS_DrvNum		db	0                   ; INT 13H的驱动器号
@@ -64,8 +64,17 @@ Label_Start:
 	mov bx,000fh
 	mov dx,0000h
 	mov cx,10
+	push ax
+	mov ax,ds
+	mov es,ax
+	pop ax
 	mov bp,StartBootMessage
 	int 10h
+	
+; 软盘复位
+	xor ah,ah
+	xor dl,dl
+	int 13h
 
 ; 搜索 loader.bin
 	mov	word	[SectorNo],	SectorNumOfRootDirStart
@@ -79,7 +88,7 @@ Lable_Search_In_Root_Dir_Begin:
 	mov	es,	ax
 	mov	bx,	8000h
 	mov	ax,	[SectorNo]
-	mov	cx,	1
+	mov	cl,	1
 	call	Func_ReadOneSector
 	mov	si,	LoaderFileName
 	mov	di,	8000h
@@ -140,18 +149,13 @@ Label_No_LoaderBin:
 
 Label_FileName_Found:
 
-	mov	cx,	[BPB_SecPerClus]
+	mov	ax,	RootDirSectors
 	and	di,	0ffe0h
 	add	di,	01ah
-	mov	ax,	word	[es:di]
-	push	ax
-	sub	ax,	2
-	mul	cl
-
-	mov	cx,	RootDirSectors
+	mov	cx,	word	[es:di]
+	push	cx
 	add	cx,	ax
-;	add	cx,	SectorBalance
-	add	cx,	SectorNumOfRootDirStart
+	add	cx,	SectorBalance
 	mov	ax,	BaseOfLoader
 	mov	es,	ax
 	mov	bx,	OffsetOfLoader
@@ -162,30 +166,22 @@ Label_Go_On_Loading_File:
 	push	bx
 	mov	ah,	0eh
 	mov	al,	'.'
-	mov	bx,	0fh
+	mov	bl,	0fh
 	int	10h
 	pop	bx
 	pop	ax
 
-	mov	cx,	[BPB_SecPerClus]
+	mov	cl,	1
 	call	Func_ReadOneSector
 	pop	ax
 	call	Func_GetFATEntry
 	cmp	ax,	0fffh
 	jz	Label_File_Loaded
 	push	ax
-
-	mov	cx,	[BPB_SecPerClus]
-	sub	ax,	2
-	mul	cl
-
 	mov	dx,	RootDirSectors
 	add	ax,	dx
-;	add	ax,	SectorBalance
-	add	ax,	SectorNumOfRootDirStart
-
-	add	bx,	0x1000	;add	bx,	[BPB_BytesPerSec]
-
+	add	ax,	SectorBalance
+	add	bx,	[BPB_BytesPerSec]
 	jmp	Label_Go_On_Loading_File
 
 Label_File_Loaded:
@@ -195,17 +191,29 @@ Label_File_Loaded:
 ; 从软盘读取一个扇区
 
 Func_ReadOneSector:
-	push	dword	00h
-	push	dword	eax
-	push	word	es
-	push	word	bx
-	push	word	cx
-	push	word	10h
-	mov	ah,	42h	;read
-	mov	dl,	00h
-	mov	si,	sp
+	
+	push	bp
+	mov	bp,	sp
+	sub	esp,	2
+	mov	byte	[bp - 2],	cl
+	push	bx
+	mov	bl,	[BPB_SecPerTrk]
+	div	bl
+	inc	ah
+	mov	cl,	ah
+	mov	dh,	al
+	shr	al,	1
+	mov	ch,	al
+	and	dh,	1
+	pop	bx
+	mov	dl,	[BS_DrvNum]
+Label_Go_On_Reading:
+	mov	ah,	2
+	mov	al,	byte	[bp - 2]
 	int	13h
-	add	sp,	10h
+	jc	Label_Go_On_Reading
+	add	esp,	2
+	pop	bp
 	ret
 
 ; 获得FAT表
@@ -235,7 +243,7 @@ Label_Even:
 	push	dx
 	mov	bx,	8000h
 	add	ax,	SectorNumOfFAT1Start
-	mov	cx,	2
+	mov	cl,	2
 	call	Func_ReadOneSector
 	
 	pop	dx

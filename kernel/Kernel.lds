@@ -4,25 +4,23 @@ ENTRY(_start)
 SECTIONS
 {
 
-	. = 0xffff800000000000 + 0x100000;		/* 内核程序起始地址 */
+	. = 0xffff800000000000 + 0x100000;
 	.text :
 	{
 		_text = .;
 		*(.text)
-
 		_etext = .;
 	}
-	
+
 	. = ALIGN(8);
-	
+
 	.data :
 	{
 		_data = .;
-		*(.data)
-		
+		*(.data)		
 		_edata = .;
 	}
-	
+
 	.rodata : 
 	{
 		_rodata = .;	
@@ -31,9 +29,8 @@ SECTIONS
 	}
 
 	. = ALIGN(32768);
-	
 	.data.init_task : { *(.data.init_task) }
-	
+
 	.bss :
 	{
 		_bss = .;

@@ -5,6 +5,7 @@
 #include "memory.h"
 #include "interrupt.h"
 #include "task.h"
+#include "cpu.h"
 
 /* 图形缓冲区映射地址为0xffff800000a00000 */
 
@@ -15,8 +16,8 @@ void KaliKernel(void) {
 	int *addr = (int *)0xffff800000a00000;
 	int i;
 
-	Pos.XResolution = 1024;
-	Pos.YResolution = 768;
+	Pos.XResolution = 1440;
+	Pos.YResolution = 900;
 
 	Pos.XPosition = 0;
 	Pos.YPosition = 0;
@@ -32,6 +33,8 @@ void KaliKernel(void) {
 	set_tss64(_stack_start, _stack_start, _stack_start, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00);
 
 	sys_vector_init();
+
+	init_cpu();
 
 	memory_management_struct.start_code = (unsigned long)& _text;
 	memory_management_struct.end_code   = (unsigned long)& _etext;

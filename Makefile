@@ -6,7 +6,7 @@ KERNEL= ./kernel/
 DISK_FILES= $(BOOTLOADER)loader.bin \
 			$(KERNEL)kernel.bin
 
-all: bootloader kernel
+all: kalinote.vfd
 
 .PHONY: bootloader kernel
 
@@ -17,17 +17,13 @@ kalinote.vfd: bootloader kernel
 	  $(FAT12IMG) $@ save $$filename; \
 	done
 	
-bootimg.img: bootloader
-	$(FAT12IMG) $@ format
-	$(FAT12IMG) $@ write $(BOOTLOADER)boot.bin 0
-	
 bootloader:
 	make -C bootloader
 kernel:
 	make -C kernel
 	
-# run: all
-# 	tools/bochsdbg.exe
+run: all
+	tools/bochsdbg.exe
 	
 clean:
 	make -C bootloader		clean

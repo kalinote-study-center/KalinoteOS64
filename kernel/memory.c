@@ -59,8 +59,8 @@ void init_memory(void) {
 		if(p->type == 1)
 			TotalMem +=  p->length;
 
-		memory_management_struct.e820[i].address = p->address;
-		memory_management_struct.e820[i].length	 = p->length;
+		memory_management_struct.e820[i].address += p->address;
+		memory_management_struct.e820[i].length	 += p->length;
 		memory_management_struct.e820[i].type	 = p->type;
 		memory_management_struct.e820_length = i;
 
@@ -84,7 +84,7 @@ void init_memory(void) {
 		TotalMem += (end - start) >> PAGE_2M_SHIFT;
 	}
 	
-	color_printk(COL_ORANGE,COL_BLACK,"Total 2M PAGEs:%#018lx=%018ld\n",TotalMem,TotalMem);
+	color_printk(COL_ORANGE,COL_BLACK,"Total 2M PAGEs:%#010x=%010d\n",TotalMem,TotalMem);
 	
 	TotalMem = memory_management_struct.e820[memory_management_struct.e820_length].address + memory_management_struct.e820[memory_management_struct.e820_length].length;
 
