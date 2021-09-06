@@ -23,7 +23,7 @@ SectorBalance			equ	23
 	BPB_SecPerClus	db	0x8					; 每个簇大小为一个扇区
 	BPB_RsvdSecCnt	dw	0x1					; FAT起始位置(boot记录占用扇区数)
 	BPB_NumFATs		db	0x2                 ; FAT表数
-	BPB_RootEntCnt	dw	0x0e				; 根目录最大文件数
+	BPB_RootEntCnt	dw	0xe0				; 根目录最大文件数
 	BPB_TotSec16	dw	0x7d82				; 磁盘大小(总扇区数，如果这里扇区数为0，则由下面给出)
 	BPB_Media		db	0xf0                ; 磁盘种类
 	BPB_FATSz16		dw	0xc                 ; FAT长度(每个FAT表占用扇区数)

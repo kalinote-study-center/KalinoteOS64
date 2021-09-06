@@ -15,8 +15,8 @@ void KaliKernel(void) {
 	int *addr = (int *)0xffff800000a00000;
 	int i;
 
-	Pos.XResolution = 1440;
-	Pos.YResolution = 900;
+	Pos.XResolution = 1024;
+	Pos.YResolution = 768;
 
 	Pos.XPosition = 0;
 	Pos.YPosition = 0;

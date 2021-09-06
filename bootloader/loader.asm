@@ -6,8 +6,8 @@ org	10000h
 BaseOfKernelFile	equ	0x00
 OffsetOfKernelFile	equ	0x100000
 
-BaseTmpOfKernelAddr	equ	0x00
-OffsetTmpOfKernelFile	equ	0x7E00
+BaseTmpOfKernelAddr	equ	0x9000
+OffsetTmpOfKernelFile	equ	0x0000
 
 MemoryStructBufferAddr	equ	0x7E00
 
@@ -45,9 +45,12 @@ Label_Start:
 	mov	ax,	cs
 	mov	ds,	ax
 	mov	es,	ax
-	mov	ax,	0x00
-	mov	ss,	ax
-	mov	sp,	0x7c00
+	mov	ss,	ax	;10000:0000
+	mov	sp,	0x00
+
+
+	mov	ax, 0B800h
+	mov	gs, ax
 
 ; 显示start loader
 	mov	ax,	1301h
@@ -83,15 +86,7 @@ Label_Start:
 	and	al,	11111110b
 	mov	cr0,	eax
 
-	sti
-
-; 重置软盘
-
-	xor	ah,	ah
-	xor	dl,	dl
-	int	13h
-
-; 搜索kernel.bin
+;=======	search kernel.bin
 	mov	word	[SectorNo],	SectorNumOfRootDirStart
 
 Lable_Search_In_Root_Dir_Begin:
@@ -163,16 +158,22 @@ Label_No_LoaderBin:
 ; 在根目录结构中找到loader.bin
 
 Label_FileName_Found:
-	mov	ax,	RootDirSectors
+
+	mov	cx,	[BPB_SecPerClus]
 	and	di,	0FFE0h
 	add	di,	01Ah
-	mov	cx,	word	[es:di]
-	push	cx
+	mov	ax,	word	[es:di]
+	push	ax
+
+	sub	ax,	2
+	mul	cl
+	
+	mov	cx,	RootDirSectors
 	add	cx,	ax
-	add	cx,	SectorBalance
-	mov	eax,	BaseTmpOfKernelAddr	;BaseOfKernelFile
+	add	cx,	SectorNumOfRootDirStart
+	mov	eax,	BaseTmpOfKernelAddr;BaseOfKernelFile
 	mov	es,	eax
-	mov	bx,	OffsetTmpOfKernelFile	;OffsetOfKernelFile
+	mov	bx,	OffsetTmpOfKernelFile;OffsetOfKernelFile
 	mov	ax,	cx
 
 Label_Go_On_Loading_File:
@@ -180,26 +181,23 @@ Label_Go_On_Loading_File:
 	push	bx
 	mov	ah,	0Eh
 	mov	al,	'.'
-	mov	bl,	0Fh
+	mov	bx,	0Fh
 	int	10h
 	pop	bx
 	pop	ax
 
-	mov	cl,	1
+	mov	cx,	[BPB_SecPerClus]
 	call	Func_ReadOneSector
 	pop	ax
 
-;;;;;;;;;;;;;;;;;;;;;;;	
 	push	cx
 	push	eax
-	push	fs
+;	push	fs		;must don`t change !!!!
 	push	edi
 	push	ds
 	push	esi
 
-	mov	cx,	200h
-	mov	ax,	BaseOfKernelFile
-	mov	fs,	ax
+	mov	cx,	1000h
 	mov	edi,	dword	[OffsetOfKernelFileCount]
 
 	mov	ax,	BaseTmpOfKernelAddr
@@ -224,19 +222,21 @@ Label_Mov_Kernel:	;------------------
 	pop	esi
 	pop	ds
 	pop	edi
-	pop	fs
 	pop	eax
 	pop	cx
-;;;;;;;;;;;;;;;;;;;;;;;	
 
 	call	Func_GetFATEntry
 	cmp	ax,	0FFFh
 	jz	Label_File_Loaded
 	push	ax
+	
+	mov	cx,	[BPB_SecPerClus]
+	sub	ax,	2
+	mul	cl
+
 	mov	dx,	RootDirSectors
 	add	ax,	dx
-	add	ax,	SectorBalance
-;	add	bx,	[BPB_BytesPerSec]
+	add	ax,	SectorNumOfRootDirStart
 
 	jmp	Label_Go_On_Loading_File
 
@@ -247,14 +247,6 @@ Label_File_Loaded:
 	mov	ah, 0Fh				; 0000: 黑底    1111: 白字
 	mov	al, 'G'
 	mov	[gs:((80 * 0 + 39) * 2)], ax	; 屏幕第 0 行, 第 39 列。
-
-KillMotor:
-	
-	push	dx
-	mov	dx,	03F2h
-	mov	al,	0	
-	out	dx,	al
-	pop	dx
 
 ; 获取地址大小类型
 
@@ -282,15 +274,12 @@ Label_Get_Mem_Struct:
 	int	15h
 	jc	Label_Get_Mem_Fail
 	add	di,	20
-	inc	dword	[MemStructNumber]
 
 	cmp	ebx,	0
 	jne	Label_Get_Mem_Struct
 	jmp	Label_Get_Mem_OK
 
 Label_Get_Mem_Fail:
-
-	mov	dword	[MemStructNumber],	0
 
 	mov	ax,	1301h
 	mov	bx,	008Ch
@@ -384,61 +373,49 @@ Label_Get_Mem_OK:
 
 	mov	ax,	0x00
 	mov	es,	ax
-	mov	si,	0x800e
-
-	mov	esi,	dword	[es:si]
-	mov	edi,	0x8200
-
-Label_SVGA_Mode_Info_Get:
-
-	mov	cx,	word	[es:esi]
-
-; 显示SVGA模式信息
-
-	push	ax
 	
-	mov	ax,	00h
-	mov	al,	ch
-	call	Label_DispAL
+	mov	si,	0x8000
+
+	mov	cx,	22h;;;;;;;;;;;;;;;;;;
+LOOP_Disp_VBE_Info:
 
 	mov	ax,	00h
-	mov	al,	cl	
+	mov	al,	byte	[es:si]
 	call	Label_DispAL
-	
-	pop	ax
+	add	si,	1
 
-;=======
+	loop	LOOP_Disp_VBE_Info
+	
+	mov	cx,	0xff;;;;;;;;;;;;;;
+
+LABEL_Get_Mode_List:
 	
 	cmp	cx,	0FFFFh
-	jz	Label_SVGA_Mode_Info_Finish
-
+	add	cx,	1
 	mov	ax,	4F01h
+	mov	edi,	0x8200
 	int	10h
 
 	cmp	ax,	004Fh
+	jnz	LABEL_Get_Mode_List
 
-	jnz	Label_SVGA_Mode_Info_FAIL	
+	cmp	cx,	0x1ff
+	jnz	LABEL_Get_Mode_List
 
-	inc	dword		[SVGAModeCounter]
-	add	esi,	2
-	add	edi,	0x100
+	jmp	Label_SVGA_Mode_Info_Finish
 
-	jmp	Label_SVGA_Mode_Info_Get
-		
-Label_SVGA_Mode_Info_FAIL:
+Label_SET_SVGA_Mode_VESA_VBE_FAIL:
 
 	mov	ax,	1301h
 	mov	bx,	008Ch
 	mov	dx,	0D00h		;row 13
-	mov	cx,	24
+	mov	cx,	27
 	push	ax
 	mov	ax,	ds
 	mov	es,	ax
 	pop	ax
-	mov	bp,	GetSVGAModeInfoErrMessage
+	mov	bp,	SetSVGAModeInfoVBAVESAMessage
 	int	10h
-
-Label_SET_SVGA_Mode_VESA_VBE_FAIL:
 
 	jmp	$
 
@@ -458,7 +435,8 @@ Label_SVGA_Mode_Info_Finish:
 ; 设置SVGA模式
 
 	mov	ax,	4F02h
-	mov	bx,	4180h	;========================mode : 0x180 或 0x143
+	mov	bx,	4118h	;========================mode : 0x118
+
 	int 	10h
 
 	cmp	ax,	004Fh
@@ -466,9 +444,18 @@ Label_SVGA_Mode_Info_Finish:
 
 ; 初始化GDT IDT，切换到保护模式
 
-	cli			; 关闭中断
+	mov	ax,	cs
+	mov	ds,	ax
+	mov	fs,	ax
+	mov	es,	ax
+
+	cli
+
+	db	66h	
+	lidt	[IDT_POINTER]	
+
+	db	66h
 	lgdt	[GdtPtr]
-;	lidt	[IDT_POINTER]
 
 	mov	eax,	cr0
 	or	eax,	1
@@ -525,6 +512,7 @@ GO_TO_TMP_Protect:
 
 ; 加载 GDTR
 
+	db	66h
 	lgdt	[GdtPtr64]
 	mov	ax,	0x10
 	mov	ds,	ax
@@ -593,28 +581,17 @@ no_support:
 
 Func_ReadOneSector:
 	
-	push	bp
-	mov	bp,	sp
-	sub	esp,	2
-	mov	byte	[bp - 2],	cl
-	push	bx
-	mov	bl,	[BPB_SecPerTrk]
-	div	bl
-	inc	ah
-	mov	cl,	ah
-	mov	dh,	al
-	shr	al,	1
-	mov	ch,	al
-	and	dh,	1
-	pop	bx
-	mov	dl,	[BS_DrvNum]
-Label_Go_On_Reading:
-	mov	ah,	2
-	mov	al,	byte	[bp - 2]
+	push	dword	00h
+	push	dword	eax
+	push	word	es
+	push	word	bx
+	push	word	cx
+	push	word	10h
+	mov	ah,	42h	;read
+	mov	dl,	00h
+	mov	si,	sp
 	int	13h
-	jc	Label_Go_On_Reading
-	add	esp,	2
-	pop	bp
+	add	sp,	10h
 	ret
 
 ; 获取FAT入口
@@ -718,9 +695,6 @@ SectorNo		dw	0
 Odd			db	0
 OffsetOfKernelFileCount	dd	OffsetOfKernelFile
 
-MemStructNumber		dd	0
-
-SVGAModeCounter		dd	0
 DisplayPosition		dd	0
 
 ; 显示信息
@@ -737,5 +711,8 @@ GetSVGAVBEInfoErrMessage:	db	"Get SVGA VBE Info ERROR"
 GetSVGAVBEInfoOKMessage:	db	"Get SVGA VBE Info SUCCESSFUL!"
 
 StartGetSVGAModeInfoMessage:	db	"Start Get SVGA Mode Info"
-GetSVGAModeInfoErrMessage:	db	"Get SVGA Mode Info ERROR"
 GetSVGAModeInfoOKMessage:	db	"Get SVGA Mode Info SUCCESSFUL!"
+
+SetSVGAModeInfoVBAVESAMessage:	db	"Set SVGA Mode VBE VESA Fail"
+
+
