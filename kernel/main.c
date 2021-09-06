@@ -7,17 +7,20 @@
 #include "task.h"
 #include "cpu.h"
 
+#define APIC	1
+
+#if  APIC
+#include "APIC.h"
+#else
+#include "8259A.h"
+#endif
+
 /* 图形缓冲区映射地址为0xffff800003000000 */
 
 struct Global_Memory_Descriptor memory_management_struct = {{0},0};
 
 void KaliKernel(void) {
 	/* KalinoteOS2.0 内核程序入口 */
-	int *addr = (int *)0xffff800003000000;
-	int i;
-	struct Page * page = NULL;
-	void * tmp = NULL;
-	struct Slab *slab = NULL;
 
 	Pos.XResolution = 1440;
 	Pos.YResolution = 900;
@@ -62,7 +65,12 @@ void KaliKernel(void) {
 	pagetable_init();
 	
 	color_printk(COL_RED,COL_BLACK,"interrupt init \n");
-	init_interrupt();
+	#if  APIC
+		APIC_IOAPIC_init();
+	#else
+		init_8259A();
+	#endif
+
 
 	// color_printk(COL_RED,COL_BLACK,"task_init \n");
 	// task_init();

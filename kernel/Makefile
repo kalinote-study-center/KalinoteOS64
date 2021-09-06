@@ -1,6 +1,6 @@
 CFLAGS = -fno-stack-protector -mcmodel=large -fno-builtin -m64
 
-OBJ= head.o main.o printk.o trap.o entry.o memory.o interrupt.o task.o cpu.o
+OBJ= head.o main.o printk.o trap.o entry.o memory.o interrupt.o task.o cpu.o 8259A.o APIC.o
 
 all: system
 	objcopy -I elf64-x86-64 -S -R ".eh_frame" -R ".comment" -O binary system kernel.bin
@@ -21,6 +21,27 @@ main.o:	main.c
 	
 printk.o: printk.c
 	gcc  $(CFLAGS) -c printk.c
+
+trap.o: trap.c
+	gcc  $(CFLAGS) -c trap.c
+	
+memory.o: memory.c
+	gcc  $(CFLAGS) -c memory.c
+
+interrupt.o: interrupt.c
+	gcc  $(CFLAGS) -c interrupt.c
+
+task.o: task.c
+	gcc  $(CFLAGS) -c task.c
+
+cpu.o: cpu.c
+	gcc  $(CFLAGS) -c cpu.c
+
+8259A.o: 8259A.c
+	gcc  $(CFLAGS) -c 8259A.c
+
+APIC.o: APIC.c
+	gcc  $(CFLAGS) -c APIC.c
 
 clean:
 	rm -rf *.o *.ss~ *.ss *.S~ *.c~ *.h~ system  Makefile~ Kernel.lds~ kernel.bin 

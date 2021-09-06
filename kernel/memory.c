@@ -908,15 +908,15 @@ void pagetable_init() {
 
 	tmp = (unsigned long *)(((unsigned long)Phy_To_Virt((unsigned long)Global_CR3 & (~ 0xfffUL))) + 8 * 256);
 		
-	color_printk(COL_YELLOW,COL_BLACK,"1:%#018lx,%#018lx\t\t\n",(unsigned long)tmp,*tmp);
+	// color_printk(COL_YELLOW,COL_BLACK,"1:%#018lx,%#018lx\t\t\n",(unsigned long)tmp,*tmp);
 
 	tmp = Phy_To_Virt(*tmp & (~0xfffUL));
 
-	color_printk(COL_YELLOW,COL_BLACK,"2:%#018lx,%#018lx\t\t\n",(unsigned long)tmp,*tmp);
+	// color_printk(COL_YELLOW,COL_BLACK,"2:%#018lx,%#018lx\t\t\n",(unsigned long)tmp,*tmp);
 
 	tmp = Phy_To_Virt(*tmp & (~0xfffUL));
 
-	color_printk(COL_YELLOW,COL_BLACK,"3:%#018lx,%#018lx\t\t\n",(unsigned long)tmp,*tmp);
+	// color_printk(COL_YELLOW,COL_BLACK,"3:%#018lx,%#018lx\t\t\n",(unsigned long)tmp,*tmp);
 
 	for(i = 0;i < memory_management_struct.zones_size;i++) {
 		struct Zone * z = memory_management_struct.zones_struct + i;
@@ -945,8 +945,8 @@ void pagetable_init() {
 
 			set_pdt(tmp,mk_pdt(p->PHY_address,PAGE_KERNEL_Page));
 
-			if(j % 50 == 0)
-				color_printk(COL_GREEN,COL_BLACK,"@:%#018lx,%#018lx\t\n",(unsigned long)tmp,*tmp);
+			// if(j % 50 == 0)
+			// 	color_printk(COL_GREEN,COL_BLACK,"@:%#018lx,%#018lx\t\n",(unsigned long)tmp,*tmp);
 		}
 	}
 
