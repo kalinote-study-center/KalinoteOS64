@@ -113,7 +113,8 @@ ENTRY(ret_system_call)
 	popq	%rax				 
 	addq	$0x38,	%rsp	
 	.byte	0x48		 
-	sysexit	
+	sysexit					 
+
 
 ENTRY(divide_error)
 	pushq	$0

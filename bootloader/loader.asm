@@ -440,6 +440,17 @@ Label_SVGA_Mode_Info_FAIL:
 
 Label_SET_SVGA_Mode_VESA_VBE_FAIL:
 
+	mov	ax,	1301h
+	mov	bx,	000Fh
+	mov	dx,	0F00h		;row 15
+	mov	cx,	30
+	push	ax
+	mov	ax,	ds
+	mov	es,	ax
+	pop	ax
+	mov	bp,	SetVGAModeVESAVBEFAILMessage
+	int	10h
+
 	jmp	$
 
 Label_SVGA_Mode_Info_Finish:
@@ -739,3 +750,4 @@ GetSVGAVBEInfoOKMessage:	db	"Get SVGA VBE Info SUCCESSFUL!"
 StartGetSVGAModeInfoMessage:	db	"Start Get SVGA Mode Info"
 GetSVGAModeInfoErrMessage:	db	"Get SVGA Mode Info ERROR"
 GetSVGAModeInfoOKMessage:	db	"Get SVGA Mode Info SUCCESSFUL!"
+SetVGAModeVESAVBEFAILMessage:	db	"Set SVGA Mode VESA VBE FAIL!"

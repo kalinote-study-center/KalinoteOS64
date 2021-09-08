@@ -8,6 +8,49 @@
 #include "cpu.h"
 #include "APIC.h"
 
+void IOAPIC_enable(unsigned long irq) {
+	unsigned long value = 0;
+	value = ioapic_rte_read((irq - 32) * 2 + 0x10);
+	value = value & (~0x10000UL); 
+	ioapic_rte_write((irq - 32) * 2 + 0x10,value);
+}
+
+void IOAPIC_disable(unsigned long irq) {
+	unsigned long value = 0;
+	value = ioapic_rte_read((irq - 32) * 2 + 0x10);
+	value = value | 0x10000UL; 
+	ioapic_rte_write((irq - 32) * 2 + 0x10,value);
+}
+
+unsigned long IOAPIC_install(unsigned long irq,void * arg) {
+	struct IO_APIC_RET_entry *entry = (struct IO_APIC_RET_entry *)arg;
+	ioapic_rte_write((irq - 32) * 2 + 0x10,*(unsigned long *)entry);
+
+	return 1;
+}
+
+void IOAPIC_uninstall(unsigned long irq) {
+	ioapic_rte_write((irq - 32) * 2 + 0x10,0x10000UL);
+}
+
+void IOAPIC_level_ack(unsigned long irq) {
+	__asm__ __volatile__(	"movq	$0x00,	%%rdx	\n\t"
+				"movq	$0x00,	%%rax	\n\t"
+				"movq 	$0x80b,	%%rcx	\n\t"
+				"wrmsr	\n\t"
+				:::"memory");
+				
+	*ioapic_map.virtual_EOI_address = irq;
+}
+
+void IOAPIC_edge_ack(unsigned long irq)
+{
+	__asm__ __volatile__(	"movq	$0x00,	%%rdx	\n\t"
+				"movq	$0x00,	%%rax	\n\t"
+				"movq 	$0x80b,	%%rcx	\n\t"
+				"wrmsr	\n\t"
+				:::"memory");
+}
 unsigned long ioapic_rte_read(unsigned char index) {
 	unsigned long ret;
 
@@ -116,7 +159,7 @@ void Local_APIC_init() {
 	__asm__ __volatile__(	"movq 	$0x80f,	%%rcx	\n\t"
 				"rdmsr	\n\t"
 				"bts	$8,	%%rax	\n\t"
-				"bts	$12,%%rax\n\t"
+//				"bts	$12,	%%rax\n\t"
 				"wrmsr	\n\t"
 				"movq 	$0x80f,	%%rcx	\n\t"
 				"rdmsr	\n\t"
@@ -156,8 +199,8 @@ void Local_APIC_init() {
 		color_printk(COL_WHITE,COL_BLACK,"Integrated APIC\n");
 
 	//mask all LVT	
-	__asm__ __volatile__(	"movq 	$0x82f,	%%rcx	\n\t"	//CMCI
-				"wrmsr	\n\t"
+	__asm__ __volatile__(	// "movq 	$0x82f,	%%rcx	\n\t"	//CMCI
+				// "wrmsr	\n\t"
 				"movq 	$0x832,	%%rcx	\n\t"	//Timer
 				"wrmsr	\n\t"
 				"movq 	$0x833,	%%rcx	\n\t"	//Thermal Monitor
@@ -216,7 +259,6 @@ void IOAPIC_init() {
 	for(i = 0x10;i < 0x40;i += 2)
 		ioapic_rte_write(i,0x10020 + ((i - 0x10) >> 1));
 
-	ioapic_rte_write(0x12,0x21);
 	color_printk(COL_GREEN,COL_BLACK,"I/O APIC Redirection Table Entries Set Finished.\n");	
 }
 
@@ -255,8 +297,7 @@ void APIC_IOAPIC_init() {
 	color_printk(COL_RED,COL_BLACK,"Get RCBA Address:%#010x\n",x);	
 
 	//get OIC address
-	if(x > 0xfec00000 && x < 0xfee00000)
-	{
+	if(x > 0xfec00000 && x < 0xfee00000) {
 		p = (unsigned int *)Phy_To_Virt(x + 0x31feUL);
 	}
 
@@ -266,21 +307,19 @@ void APIC_IOAPIC_init() {
 	*p = x;
 	io_mfence();
 
-	//enable IF eflages
+	memset(interrupt_desc,0,sizeof(irq_desc_T)*NR_IRQS);
+
+	//open IF eflages
 	sti();
 }
 
 void do_IRQ(struct pt_regs * regs,unsigned long nr) {
-	unsigned char x;
+	irq_desc_T * irq = &interrupt_desc[nr - 32];
 
-	x = io_in8(0x60);	
-	color_printk(COL_BLUE,COL_WHITE,"(IRQ:%#04x)\tkey code:%#04x\n",nr,x);
+	if(irq->handler != NULL)
+		irq->handler(nr,irq->parameter,regs);
 
-	__asm__ __volatile__(	"movq	$0x00,	%%rdx	\n\t"
-				"movq	$0x00,	%%rax	\n\t"
-				"movq 	$0x80b,	%%rcx	\n\t"
-				"wrmsr	\n\t"
-				:::"memory");
-
+	if(irq->controller != NULL && irq->controller->ack != NULL)
+		irq->controller->ack(nr);
 }
 

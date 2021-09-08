@@ -86,6 +86,8 @@ unsigned long do_fork(struct pt_regs * regs, unsigned long clone_flags, unsigned
 	thd->rsp0 = (unsigned long)tsk + STACK_SIZE;
 	thd->rip = regs->rip;
 	thd->rsp = (unsigned long)tsk + STACK_SIZE - sizeof(struct pt_regs);
+	thd->fs = KERNEL_DS;
+	thd->gs = KERNEL_DS;
 
 	if(!(tsk->flags & PF_KTHREAD))
 		thd->rip = regs->rip = (unsigned long)ret_system_call;
@@ -114,8 +116,8 @@ __asm__ (
 "	popq	%r12	\n\t"	
 "	popq	%r11	\n\t"	
 "	popq	%r10	\n\t"	
-"	popq	%r9		\n\t"	
-"	popq	%r8		\n\t"	
+"	popq	%r9	\n\t"	
+"	popq	%r8	\n\t"	
 "	popq	%rbx	\n\t"	
 "	popq	%rcx	\n\t"	
 "	popq	%rdx	\n\t"	

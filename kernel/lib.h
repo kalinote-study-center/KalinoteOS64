@@ -15,6 +15,8 @@
 #define nop() 		__asm__ __volatile__ ("nop	\n\t")
 #define io_mfence() 	__asm__ __volatile__ ("mfence	\n\t":::"memory")
 
+#define hlt() 		__asm__ __volatile__ ("hlt	\n\t")
+#define pause() 	__asm__ __volatile__ ("pause	\n\t")
 
 struct List {
 	struct List * prev;
@@ -178,7 +180,7 @@ static inline char * strncpy(char * Dest,char * Src,long Count) {
 					"2:	\n\t"
 					:
 					:"S"(Src),"D"(Dest),"c"(Count)
-					:					
+					:"ax","memory"				
 				);
 	return Dest;
 }
@@ -197,7 +199,7 @@ static inline char * strcat(char * Dest,char * Src) {
 					"jne	1b	\n\t"
 					:
 					:"S"(Src),"D"(Dest),"a"(0),"c"(0xffffffff)
-					:					
+					:"memory"				
 				);
 	return Dest;
 }
