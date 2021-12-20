@@ -25,6 +25,7 @@ struct Global_Memory_Descriptor memory_management_struct = {{0},0};
 void KaliKernel(void) {
 	/* KalinoteOS2.0 内核程序入口 */
 	struct INT_CMD_REG icr_entry;
+	unsigned int * tss = NULL;
 
 	Pos.XResolution = 1440;
 	Pos.YResolution = 900;
@@ -40,7 +41,7 @@ void KaliKernel(void) {
 	
 	load_TR(10);
 
-	set_tss64(_stack_start, _stack_start, _stack_start, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00);
+	set_tss64(TSS64_Table,_stack_start, _stack_start, _stack_start, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00);
 
 	sys_vector_init();
 
@@ -88,6 +89,13 @@ void KaliKernel(void) {
 	
 	wrmsr(0x830,*(unsigned long *)&icr_entry);	//INIT IPI
 
+	//prepare send Start-up IPI
+	
+	_stack_start = (unsigned long)kmalloc(STACK_SIZE,0) + STACK_SIZE;
+	tss = (unsigned int *)kmalloc(128,0);
+	set_tss_descriptor(12,tss);
+	set_tss64(tss,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start);
+	
 	icr_entry.vector = 0x20;
 	icr_entry.deliver_mode = ICR_Start_up;
 	
