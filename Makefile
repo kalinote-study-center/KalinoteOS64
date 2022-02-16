@@ -1,32 +1,28 @@
 FAT12IMG=tools/fat12img
-BOOTLOADER= ./bootloader/
-KERNEL= ./kernel/
+OS= ./os/
+BIN= $(OS)bin/
 
 # 需要拷到硬盘的文件
-DISK_FILES= $(BOOTLOADER)loader.bin \
-			$(KERNEL)kernel.bin
+DISK_FILES= $(BIN)LOADER.BIN \
+			$(BIN)KERNEL.BIN
 
-all: kalinote.vfd
+all: os
 
-.PHONY: bootloader kernel
+.PHONY: os
 
-kalinote.vfd: bootloader kernel
+kalinote.vfd: os
 	$(FAT12IMG) $@ format
-	$(FAT12IMG) $@ write $(BOOTLOADER)boot.bin 0
+	$(FAT12IMG) $@ write $(BIN)boot.bin 0
 	for filename in $(DISK_FILES); do \
 	  $(FAT12IMG) $@ save $$filename; \
 	done
+
+os:
+	make -C os
 	
-bootloader:
-	make -C bootloader
-kernel:
-	make -C kernel
-	
-run: all
+run: kalinote.vfd
 	tools/bochsdbg.exe
 	
 clean:
-	make -C bootloader		clean
-	make -C kernel			clean
+	make -C os			clean
 	rm -rf *.vfd
-	

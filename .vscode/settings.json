@@ -1,9 +1,0 @@
-{
-    "C_Cpp.errorSquiggles": "Disabled",
-    "files.associations": {
-        "cpu.h": "c",
-        "memory.h": "c",
-        "gate.h": "c",
-        "ptrace.h": "c"
-    }
-}
