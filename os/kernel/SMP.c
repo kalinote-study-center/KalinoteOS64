@@ -47,7 +47,7 @@ void APU_LAPIC_pagetable_remap(mem_addr32 ph_addr, int i) {
 		set_mpl4t(tmp,mk_mpl4t(Virt_To_Phy(virtual),PAGE_KERNEL_GDT));
 	}
 	
-	color_printk(BLUE, WHITE, "[SMP]1:%#018lx\t%#018lx\t\n",(mem_addr64)tmp,(mem_addr64)*tmp);
+	// color_printk(BLUE, WHITE, "[SMP]1:%#018lx\t%#018lx\t\n",(mem_addr64)tmp,(mem_addr64)*tmp);
 	
 	tmp = Phy_To_Virt((mem_addr64 *)(*tmp & (~ 0xfffUL)) + (((mem_addr64)LAPIC_addr >> PAGE_1G_SHIFT) & 0x1ff));
 	if(*tmp == 0) {
@@ -55,12 +55,12 @@ void APU_LAPIC_pagetable_remap(mem_addr32 ph_addr, int i) {
 		set_pdpt(tmp,mk_pdpt(Virt_To_Phy(virtual),PAGE_KERNEL_Dir));
 	}
 	
-	color_printk(BLUE,WHITE,"[SMP]2:%#018lx\t%#018lx\t\n",(mem_addr64)tmp,(mem_addr64)*tmp);
+	// color_printk(BLUE,WHITE,"[SMP]2:%#018lx\t%#018lx\t\n",(mem_addr64)tmp,(mem_addr64)*tmp);
 	
 	tmp = Phy_To_Virt((mem_addr64 *)(*tmp & (~ 0xfffUL)) + (((mem_addr64)LAPIC_addr >> PAGE_2M_SHIFT) & 0x1ff));
 	set_pdt(tmp,mk_pdt(APU_local_APIC_map[i].physical_address,PAGE_KERNEL_Page | PAGE_PWT | PAGE_PCD));
 
-	color_printk(BLUE,WHITE,"[SMP]3:%#018lx\t%#018lx\t\n",(mem_addr64)tmp,(mem_addr64)*tmp);
+	// color_printk(BLUE,WHITE,"[SMP]3:%#018lx\t%#018lx\t\n",(mem_addr64)tmp,(mem_addr64)*tmp);
 
 	color_printk(BLUE,WHITE,"[SMP]APU_local_APIC_map[%d].physical_address:%#010x\t\t\n", i,APU_local_APIC_map[i].physical_address);
 	color_printk(BLUE,WHITE,"[SMP]APU_local_APIC_map[%d].virtual_address:%#018lx\t\t\n", i,(mem_addr64)APU_local_APIC_map[i].virtual_index_address);
@@ -92,17 +92,14 @@ extern int global_i;
 
 void Start_SMP() {
 	unsigned long x;
-	/*
-	**********内存地址的问题需要解决，目前只能映射到0xfee01000，再往上或者往下会报错
-	*/
-
 
 	color_printk(RED,YELLOW,"[SMP]APU[%d] Starting...\n", global_i);
 
-	// if(global_i > 1) {
-	// 	color_printk(WHITE,RED,"[SMP]APU[%d]:Failed to start\n", global_i);
-	// 	goto loop_hlt;
-	// }
+	if(global_i > 16) {
+		color_printk(WHITE,RED,"[SMP]APU[%d]:Failed to start\n", global_i);
+		color_printk(WHITE,RED,"[SMP]The system only supports up to 16 cores !\n", global_i);
+		goto loop_hlt;
+	}
 
 	color_printk(RED,YELLOW,"[SMP]set xAPIC\t\n");
 	
