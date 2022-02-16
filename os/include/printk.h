@@ -8,6 +8,7 @@
 #include <linkage.h>
 #include <graphic.h>
 #include <stdarg.h>
+#include <spinlock.h>
 
 #define is_digit(c)	((c) >= '0' && (c) <= '9')
 #define do_div(n,base) ({ \
@@ -31,6 +32,7 @@ struct PRINTK_INFO {
 	int csize_x,csize_y;		/* 字符大小(像素) */
 	vram_addr *buf;				/* 图像帧缓冲区 */
 	unsigned long buf_length;	/* 图像帧缓冲区长度 */
+	spinlock_T printk_lock;		/* 自旋锁 */
 } printk_info;
 
 void putchar(vram_addr *vram, int xsize, int x, int y,

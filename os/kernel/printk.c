@@ -6,6 +6,7 @@
 #include <fonts.h>
 #include <memory.h>
 #include <kernel.h>
+#include <spinlock.h>
 
 char printk_buf[4096] = {0};
 
@@ -293,9 +294,9 @@ int vsprintf(char * buf,const char *fmt, va_list args)
 				case 'u':
 
 					if(qualifier == 'l')
-						str = number(str,va_arg(args,unsigned long),10,field_width,precision,flags);
+						str = number(str,va_arg(args,long),10,field_width,precision,flags);
 					else
-						str = number(str,va_arg(args,unsigned int),10,field_width,precision,flags);
+						str = number(str,va_arg(args,int),10,field_width,precision,flags);
 					break;
 
 				case 'n':
@@ -356,17 +357,17 @@ int color_printk(color_code FRcolor,color_code BKcolor,const char * fmt,...) {
 	int count = 0;
 	int line = 0;
 	va_list args;
-	va_start(args, fmt);
-
-	i = vsprintf(printk_buf,fmt, args);
-
-	va_end(args);
-
+	
 	if(printk_info.mode)		/* 如果处于图形模式，则禁用内核打印 */
 		return 0;
 	
-	for(count = 0;count < i || line;count++)
-	{
+	spin_lock(&printk_info.printk_lock);
+	
+	va_start(args, fmt);
+	i = vsprintf(printk_buf,fmt, args);
+	va_end(args);
+	
+	for(count = 0;count < i || line;count++) {
 		////	add \n \b \t
 		if(line > 0)
 		{
@@ -417,6 +418,9 @@ Label_tab:
 		}
 
 	}
+	
+	spin_unlock(&printk_info.printk_lock);
+	
 	return i;
 }
 

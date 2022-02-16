@@ -20,8 +20,13 @@
 #include <mouse.h>
 #include <disk.h>
 #include <SMP.h>
+#include <spinlock.h>
 
 struct Global_Memory_Descriptor memory_management_struct = {{0},0};
+
+volatile int global_i = 0;
+
+extern spinlock_T SMP_lock;
 
 void KaliKernel(void) {
 	/* KalinoteOS64 内核程序入口 */
@@ -35,8 +40,6 @@ void KaliKernel(void) {
 	*/
 	
 	unsigned int * tss = NULL;
-	
-	struct INT_CMD_REG icr_entry;
 	/* 配置printk_info相关数据 */
 	printk_info.mode = 0;			/* 文字命令模式 */
 	#if HYPER_V
@@ -57,6 +60,8 @@ void KaliKernel(void) {
 	printk_info.buf_length = (printk_info.screen_x * printk_info.screen_y * 4 + PAGE_4K_SIZE - 1) & PAGE_4K_MASK;
 	
 	color_printk(RED,WHITE,"[Hello]Welcome to use KalinoteOS64! \n");
+
+	spin_init(&printk_info.printk_lock);
 
 	load_TR(10);
 	
@@ -88,8 +93,6 @@ void KaliKernel(void) {
 	color_printk(RED,BLACK,"[init]interrupt init \n");
 	#if APIC
 		// APIC_init();
-		
-		/* 下面是APU启动相关代码，暂时还没有实现相关功能 */
 		local_APIC_init();
 		color_printk(RED,BLACK,"[init]ICR init \n");	
 		SMP_init();
@@ -97,18 +100,19 @@ void KaliKernel(void) {
 		*local_APIC_map.virtual_icr_high_address = 0;
 		*local_APIC_map.virtual_icr_low_address = 0xc4500;	//INIT IPI
 		
-		_stack_start = (unsigned long)kmalloc(STACK_SIZE,0) + STACK_SIZE;
-		tss = (unsigned int *)kmalloc(128,0);
-		set_tss_descriptor(12,tss);
-		set_tss64(tss,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start);
-		
-		icr_entry.vector = 0x20;
-		icr_entry.deliver_mode = ICR_Start_up;
-		
-		*local_APIC_map.virtual_icr_high_address = 0;
-		*local_APIC_map.virtual_icr_low_address = 0xc4620;	//Start-up IPI
-		*local_APIC_map.virtual_icr_high_address = 0;
-		*local_APIC_map.virtual_icr_low_address = 0xc4620;	//Start-up IPI
+		for(global_i = 1;global_i < 4;) {
+			spin_lock(&SMP_lock);
+			
+			_stack_start = (unsigned long)kmalloc(STACK_SIZE,0) + STACK_SIZE;
+			tss = (unsigned int *)kmalloc(128,0);
+			set_tss_descriptor(10 + global_i * 2,tss);
+			set_tss64(tss,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start);
+
+			*local_APIC_map.virtual_icr_high_address = (global_i << 24);		/* 指定投递目标 */
+			*local_APIC_map.virtual_icr_low_address = 0x620;	//Start-up IPI
+			*local_APIC_map.virtual_icr_high_address = (global_i << 24);
+			*local_APIC_map.virtual_icr_low_address = 0x620;	//Start-up IPI
+		}
 		
 	#else
 		init_8259A();
