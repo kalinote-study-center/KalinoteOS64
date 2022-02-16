@@ -34,8 +34,7 @@ void KaliKernel(void) {
 	* 如果更改VRAM地址，需要对printk中的frame_buffer_init函数进行相应修改
 	*/
 	
-	char buf[512];
-	int i;
+	unsigned int * tss = NULL;
 	
 	struct INT_CMD_REG icr_entry;
 	/* 配置printk_info相关数据 */
@@ -61,11 +60,11 @@ void KaliKernel(void) {
 
 	load_TR(10);
 	
-	set_tss64(_stack_start, _stack_start, _stack_start, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00,0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00);
+	set_tss64(TSS64_Table, _stack_start, _stack_start, _stack_start, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00,0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00, 0xffff800000007c00);
 	
 	sys_vector_init();
 
-	init_cpu();
+	// init_cpu();
 
 	memory_management_struct.start_code = (unsigned long)& _text;
 	memory_management_struct.end_code   = (unsigned long)& _etext;
@@ -92,10 +91,20 @@ void KaliKernel(void) {
 		
 		/* 下面是APU启动相关代码，暂时还没有实现相关功能 */
 		local_APIC_init();
+		color_printk(RED,BLACK,"[init]ICR init \n");	
 		SMP_init();
 		
 		*local_APIC_map.virtual_icr_high_address = 0;
 		*local_APIC_map.virtual_icr_low_address = 0xc4500;	//INIT IPI
+		
+		_stack_start = (unsigned long)kmalloc(STACK_SIZE,0) + STACK_SIZE;
+		tss = (unsigned int *)kmalloc(128,0);
+		set_tss_descriptor(12,tss);
+		set_tss64(tss,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start);
+		
+		icr_entry.vector = 0x20;
+		icr_entry.deliver_mode = ICR_Start_up;
+		
 		*local_APIC_map.virtual_icr_high_address = 0;
 		*local_APIC_map.virtual_icr_low_address = 0xc4620;	//Start-up IPI
 		*local_APIC_map.virtual_icr_high_address = 0;

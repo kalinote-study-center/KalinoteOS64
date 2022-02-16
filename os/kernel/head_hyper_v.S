@@ -30,7 +30,7 @@ ENTRY(_start)
 
 //=======	load	cr3
 
-	movq	$0x101000,	%rax	// APU运行到此处时会出现问题
+	movq	$0x101000,	%rax
 	movq	%rax,		%cr3
 	movq	switch_seg(%rip),	%rax
 	pushq	$0x08
