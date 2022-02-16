@@ -45,6 +45,19 @@ void IOAPIC_edge_ack(unsigned long irq) {
 	*local_APIC_map.virtual_eoi_address = 0x0;
 }
 
+extern struct local_APIC_map APU_local_APIC_map[4];
+
+void Local_APIC_edge_level_ack(unsigned long irq) {
+	/* 该函数存疑 */
+	// int i;
+	*local_APIC_map.virtual_eoi_address = 0x0;
+	// /* 好像不能这么处理 */
+	// for(i = 0; i < 4; i++)	/* 向所有APU发送中断处理完毕的信号(不知道能不能这么处理) */
+	// 	*APU_local_APIC_map[i].virtual_eoi_address = 0x0;
+	// *APU_local_APIC_map[0].virtual_eoi_address = 0x0;	/* 这一句仅用于定向测试 */
+	// *APU_local_APIC_map[1].virtual_eoi_address = 0x0;	/* 这一句仅用于定向测试 */
+}
+
 void LAPIC_pagetable_remap() {
 	/* local APIC 页表映射 */
 	mem_addr64 *tmp;
@@ -471,11 +484,21 @@ void APIC_init() {
 }
 
 void do_IRQ(struct pt_regs * regs,unsigned long nr)	{
-	irq_desc_T * irq = &interrupt_desc[nr - 32];
-
-	if(irq->handler != NULL)
-		irq->handler(nr,irq->parameter,regs);
-
-	if(irq->controller != NULL && irq->controller->ack != NULL)
-		irq->controller->ack(nr);
+	switch(nr & 0x80) {
+		case 0x00:	/* 普通中断信号 */
+		{
+			irq_desc_T * irq = &interrupt_desc[nr - 32];
+			if(irq->handler != NULL)
+				irq->handler(nr,irq->parameter,regs);
+			if(irq->controller != NULL && irq->controller->ack != NULL)
+				irq->controller->ack(nr);
+		}	break;
+		case 0x80:	/* IPI通信信号 */
+			color_printk(RED,BLACK,"[APIC]SMP IPI :%d\n",nr);
+			Local_APIC_edge_level_ack(nr);
+			break;
+		default:
+			color_printk(RED,BLACK,"[APIC]do_IRQ receive:%d\n",nr);
+			break;
+	}
 }

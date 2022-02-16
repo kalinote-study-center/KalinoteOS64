@@ -8,6 +8,7 @@
 #include <memory.h>
 #include <gate.h>
 #include <spinlock.h>
+#include <interrupt.h>
 
 struct local_APIC_map APU_local_APIC_map[4];	/* 或许以后可以把引导处理器也加进来 */
 
@@ -86,6 +87,11 @@ void SMP_init() {
 	memcpy(_APU_boot_start,(unsigned char *)0xffff800000020000,(unsigned long)&_APU_boot_end - (unsigned long)&_APU_boot_start);
 
 	spin_init(&SMP_lock);
+	
+	for(i = 200;i < 210; i++) {
+		set_intr_gate(i , 2 , SMP_interrupt[i - 200]);
+	}
+	memset(SMP_IPI_desc,0,sizeof(irq_desc_T) * 10);
 }
 
 extern int global_i;
@@ -146,8 +152,9 @@ loop_hlt:
 	/* 相比起在这个问题上花时间debug，不如先把后续功能完善一下:) */
 	
 	spin_unlock(&SMP_lock);	
+	io_sti();
 	
-	for(;;)
+	while(1)
 		io_hlt();
 
 }

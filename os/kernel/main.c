@@ -121,6 +121,11 @@ void KaliKernel(void) {
 			io_hlt();
 	#endif
 	
+	*local_APIC_map.virtual_icr_high_address = (1 << 24);	/* 目标处理器为1号APU */
+	*local_APIC_map.virtual_icr_low_address = 0xc8;
+	*local_APIC_map.virtual_icr_high_address = (1 << 24);	/* 目标处理器为1号APU */
+	*local_APIC_map.virtual_icr_low_address = 0xc9;
+	
 	// color_printk(RED,BLACK,"keyboard init \n");
 	// keyboard_init();
 	
