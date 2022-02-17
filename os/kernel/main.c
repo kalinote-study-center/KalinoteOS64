@@ -21,6 +21,8 @@
 #include <disk.h>
 #include <SMP.h>
 #include <spinlock.h>
+#include <time.h>
+#include <HPET.h>
 
 struct Global_Memory_Descriptor memory_management_struct = {{0},0};
 
@@ -40,6 +42,7 @@ void KaliKernel(void) {
 	*/
 	
 	unsigned int * tss = NULL;
+	
 	/* 配置printk_info相关数据 */
 	printk_info.mode = 0;			/* 文字命令模式 */
 	#if HYPER_V
@@ -90,10 +93,22 @@ void KaliKernel(void) {
 	color_printk(RED,BLACK,"[init]pagetable init \n");	
 	pagetable_init();
 	
+	color_printk(RED,BLACK,"[init]time init \n");
+	get_cmos_time(&time);
+	
 	color_printk(RED,BLACK,"[init]interrupt init \n");
 	#if APIC
-		// APIC_init();
-		local_APIC_init();
+		APIC_init();
+		
+		color_printk(RED,BLACK,"Timer & Clock init \n");	
+		HPET_init();
+		
+		color_printk(RED,BLACK,"[init]keyboard init \n");
+		keyboard_init();
+		
+		color_printk(RED,BLACK,"[init]mouse init \n");
+		mouse_init();
+		
 		color_printk(RED,BLACK,"[init]ICR init \n");	
 		SMP_init();
 		
@@ -121,29 +136,21 @@ void KaliKernel(void) {
 			io_hlt();
 	#endif
 	
+	/* (测试)向1号处理器发送IPI消息 */
 	*local_APIC_map.virtual_icr_high_address = (1 << 24);	/* 目标处理器为1号APU */
 	*local_APIC_map.virtual_icr_low_address = 0xc8;
 	*local_APIC_map.virtual_icr_high_address = (1 << 24);	/* 目标处理器为1号APU */
 	*local_APIC_map.virtual_icr_low_address = 0xc9;
-	
-	// color_printk(RED,BLACK,"keyboard init \n");
-	// keyboard_init();
-	
-	// color_printk(RED,BLACK,"mouse init \n");
-	// mouse_init();
-	
-	// color_printk(RED,BLACK,"disk init \n");
-	// disk_init();
 
-	//	color_printk(RED,BLACK,"task_init \n");
-	//	task_init();
+	color_printk(RED,BLACK,"[init]year:%#010x,month:%#010x,day:%#010x,hour:%#010x,mintue:%#010x,second:%#010x\n",time.year,time.month,time.day,time.hour,time.minute,time.second);
+	
 	// init_screen(printk_info.buf, printk_info.screen_x, printk_info.screen_y);		/* 初始化屏幕图形界面 */
 
 	while(1) {
-		// if(p_kb->count)
-		// 	analysis_keycode();
-		// if(p_mouse->count)
-		// 	analysis_mousecode();
+		if(p_kb->count)
+			analysis_keycode();
+		if(p_mouse->count)
+			analysis_mousecode();
 		io_hlt();
 	}
 	

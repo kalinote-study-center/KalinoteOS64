@@ -446,33 +446,24 @@ void APIC_init() {
 	local_APIC_init();		/* 初始化local APIC */
 	IOAPIC_init();			/* 初始化IOAPIC */
 	
-	// 获取RCBA地址(RCBA位于bus 0, device 31, function 0, offset F0h)
-	io_out32(CONFIG_ADDRESS, make_pci_address(0, 31, 0, 0xf0));
-	x = io_in32(CONFIG_DATA);
-	color_printk(RED,BLACK,"[APIC]Get RCBA Address:%#010x\t\n",x);
-	/* 为什么这里获取到的x是0xffffffff */
-	
 	//获取 RCBA 地址
 	io_out32(0xcf8,0x8000f8f0);
 	x = io_in32(0xcfc);
-	color_printk(RED,BLACK,"[APIC]Get RCBA Address:%#010x\t\n",x);	
+	// color_printk(RED,BLACK,"[APIC]Get RCBA Address:%#010x\t\n",x);	
 	x = x & 0xffffc000;
-	color_printk(RED,BLACK,"[APIC]Get RCBA Address:%#010x\t\n",x);	
+	// color_printk(RED,BLACK,"[APIC]Get RCBA Address:%#010x\t\n",x);	
 
 	//获取 OIC 地址
 	if(x > 0xfec00000 && x < 0xfee00000) {
 		p = (unsigned int *)Phy_To_Virt(x + 0x31feUL);
 	}
-	
-	// for(;;);
-	/* 这里由于获取不到RCBA的地址(读出值为0xffffffff)，所以无法设置OIC */
-	/* 但是经过测试，这里不进行设置也没有影响到中断功能 */
-	/* 所以暂时不对此处进行处理 */
+
+	/* 值得注意的是bochs在这里无法获取到RCBA地址 */
 	//enable IOAPIC
-	// x = (*p & 0xffffff00) | 0x100;
-	// io_mfence();
-	// *p = x;
-	// io_mfence();
+	x = (*p & 0xffffff00) | 0x100;
+	io_mfence();
+	*p = x;
+	io_mfence();
 
 	memset(interrupt_desc,0,sizeof(irq_desc_T)*NR_IRQS);
 	

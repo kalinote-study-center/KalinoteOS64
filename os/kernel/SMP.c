@@ -97,6 +97,9 @@ void SMP_init() {
 extern int global_i;
 
 void Start_SMP() {
+	/*
+	* local APIC寄存器占用了0xf?e00000 - 0xf?e00400 内存，其中?为任意数
+	*/
 	unsigned long x;
 
 	color_printk(RED,YELLOW,"[SMP]APU[%d] Starting...\n", global_i);

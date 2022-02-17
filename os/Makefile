@@ -21,9 +21,9 @@
 CFLAGS = -fno-stack-protector -mcmodel=large -fno-builtin -m64 $(INCLUDE)
 INCLUDE = -I include
 OBJ = obj/head.o obj/entry.o obj/APU_boot.o obj/main.o obj/printk.o obj/trap.o obj/memory.o obj/interrupt.o \
-		obj/mtask.o obj/cpu.o obj/PIC.o obj/SMP.o $(DRIVER_OBJ) $(GRAPHIC_OBJ)
+		obj/mtask.o obj/cpu.o obj/PIC.o obj/SMP.o obj/time.o $(DRIVER_OBJ) $(GRAPHIC_OBJ)
 
-DRIVER_OBJ = obj/keyboard.o obj/mouse.o obj/disk.o
+DRIVER_OBJ = obj/keyboard.o obj/mouse.o obj/disk.o obj/HPET.o
 
 GRAPHIC_OBJ = obj/graphic.o obj/layer.o obj/window.o
 
@@ -83,6 +83,8 @@ obj/PIC.o:	kernel/8259A.c
 endif
 obj/SMP.o:	kernel/SMP.c
 	gcc  $(CFLAGS) -c $< -o $@
+obj/time.o:	kernel/time.c
+	gcc  $(CFLAGS) -c $< -o $@
 
 # driver
 obj/keyboard.o:	driver/keyboard.c
@@ -90,6 +92,8 @@ obj/keyboard.o:	driver/keyboard.c
 obj/mouse.o:	driver/mouse.c
 	gcc  $(CFLAGS) -c $< -o $@
 obj/disk.o:	driver/disk.c
+	gcc  $(CFLAGS) -c $< -o $@
+obj/HPET.o:	driver/HPET.c
 	gcc  $(CFLAGS) -c $< -o $@
 
 # graphic
