@@ -7,6 +7,7 @@
 #include <APIC.h>
 #include <interrupt.h>
 #include <printk.h>
+#include <softirq.h>
 
 hw_int_controller PIT_int_controller =  {
 	.enable = IOAPIC_enable,
@@ -18,13 +19,12 @@ hw_int_controller PIT_int_controller =  {
 
 void PIT_handler(unsigned long nr, unsigned long parameter, struct pt_regs * regs) {
 	jiffies++;
-	if(jiffies % 100 == 0)		/* 每秒输出一次 */
-		color_printk(RED,WHITE,"(PIT)");
+	set_softirq_status(TIMER_SIRQ);
 }
 
 extern struct time time;
 
-void init_pit() {
+void PIT_init() {
 	struct IO_APIC_RET_entry entry;
 	
 	/*****************************************************************

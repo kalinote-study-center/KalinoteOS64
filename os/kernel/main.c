@@ -99,8 +99,12 @@ void KaliKernel(void) {
 		for(;;)
 			io_hlt();
 	#endif
+	color_printk(RED,BLACK,"[init]Soft IRQ init \n");
+	softirq_init();
+	
 	color_printk(RED,BLACK,"[init]timer & clock init \n");
-	init_pit();
+	timer_init();
+	PIT_init();
 	
 	color_printk(RED,BLACK,"[init]keyboard init \n");
 	keyboard_init();
