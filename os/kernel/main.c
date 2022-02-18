@@ -22,12 +22,10 @@
 #include <SMP.h>
 #include <spinlock.h>
 #include <time.h>
-#include <HPET.h>
+#include <PIT.h>
 
 struct Global_Memory_Descriptor memory_management_struct = {{0},0};
-
 volatile int global_i = 0;
-
 extern spinlock_T SMP_lock;
 
 void KaliKernel(void) {
@@ -40,9 +38,8 @@ void KaliKernel(void) {
 	* 已经将0xab000000映射到0xffff8000ab000000(其中，ab是具体地址变量)
 	* 如果更改VRAM地址，需要对printk中的frame_buffer_init函数进行相应修改
 	*/
-	
+	struct time time;
 	unsigned int * tss = NULL;
-	
 	/* 配置printk_info相关数据 */
 	printk_info.mode = 0;			/* 文字命令模式 */
 	#if HYPER_V
@@ -93,57 +90,49 @@ void KaliKernel(void) {
 	color_printk(RED,BLACK,"[init]pagetable init \n");	
 	pagetable_init();
 	
-	color_printk(RED,BLACK,"[init]time init \n");
-	get_cmos_time(&time);
-	
 	color_printk(RED,BLACK,"[init]interrupt init \n");
 	#if APIC
-		APIC_init();
-		
-		color_printk(RED,BLACK,"Timer & Clock init \n");	
-		HPET_init();
-		
-		color_printk(RED,BLACK,"[init]keyboard init \n");
-		keyboard_init();
-		
-		color_printk(RED,BLACK,"[init]mouse init \n");
-		mouse_init();
-		
-		color_printk(RED,BLACK,"[init]ICR init \n");	
-		SMP_init();
-		
-		*local_APIC_map.virtual_icr_high_address = 0;
-		*local_APIC_map.virtual_icr_low_address = 0xc4500;	//INIT IPI
-		
-		for(global_i = 1;global_i < 4;) {
-			spin_lock(&SMP_lock);
-			
-			_stack_start = (unsigned long)kmalloc(STACK_SIZE,0) + STACK_SIZE;
-			tss = (unsigned int *)kmalloc(128,0);
-			set_tss_descriptor(10 + global_i * 2,tss);
-			set_tss64(tss,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start);
-
-			*local_APIC_map.virtual_icr_high_address = (global_i << 24);		/* 指定投递目标 */
-			*local_APIC_map.virtual_icr_low_address = 0x620;	//Start-up IPI
-			*local_APIC_map.virtual_icr_high_address = (global_i << 24);
-			*local_APIC_map.virtual_icr_low_address = 0x620;	//Start-up IPI
-		}
-		
+		APIC_init();		
 	#else
 		init_8259A();
 		color_printk(RED,BLACK,"[error]The driver of the 8259A chip is not yet perfect!  \n");
 		for(;;)
 			io_hlt();
 	#endif
+	color_printk(RED,BLACK,"[init]timer & clock init \n");
+	init_pit();
 	
-	/* (测试)向1号处理器发送IPI消息 */
+	color_printk(RED,BLACK,"[init]keyboard init \n");
+	keyboard_init();
+	
+	color_printk(RED,BLACK,"[init]mouse init \n");
+	mouse_init();
+
+	color_printk(RED,BLACK,"[init]ICR init \n");	
+	SMP_init();
+	
+	*local_APIC_map.virtual_icr_high_address = 0;
+	*local_APIC_map.virtual_icr_low_address = 0xc4500;	//INIT IPI
+	
+	for(global_i = 1;global_i < 12;) {
+		spin_lock(&SMP_lock);
+		
+		_stack_start = (unsigned long)kmalloc(STACK_SIZE,0) + STACK_SIZE;
+		tss = (unsigned int *)kmalloc(128,0);
+		set_tss_descriptor(10 + global_i * 2,tss);
+		set_tss64(tss,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start);
+
+		*local_APIC_map.virtual_icr_high_address = (global_i << 24);		/* 指定投递目标 */
+		*local_APIC_map.virtual_icr_low_address = 0x620;	//Start-up IPI
+		*local_APIC_map.virtual_icr_high_address = (global_i << 24);
+		*local_APIC_map.virtual_icr_low_address = 0x620;	//Start-up IPI
+	}
+	
 	*local_APIC_map.virtual_icr_high_address = (1 << 24);	/* 目标处理器为1号APU */
 	*local_APIC_map.virtual_icr_low_address = 0xc8;
 	*local_APIC_map.virtual_icr_high_address = (1 << 24);	/* 目标处理器为1号APU */
 	*local_APIC_map.virtual_icr_low_address = 0xc9;
 
-	color_printk(RED,BLACK,"[init]year:%#010x,month:%#010x,day:%#010x,hour:%#010x,mintue:%#010x,second:%#010x\n",time.year,time.month,time.day,time.hour,time.minute,time.second);
-	
 	// init_screen(printk_info.buf, printk_info.screen_x, printk_info.screen_y);		/* 初始化屏幕图形界面 */
 
 	while(1) {
@@ -151,7 +140,6 @@ void KaliKernel(void) {
 			analysis_keycode();
 		if(p_mouse->count)
 			analysis_mousecode();
-		io_hlt();
 	}
 	
 }

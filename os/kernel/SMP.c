@@ -14,7 +14,7 @@ struct local_APIC_map APU_local_APIC_map[4];	/* 或许以后可以把引导处�
 
 void APU_LAPIC_pagetable_remap(mem_addr32 ph_addr, int i) {
 	/* AP处理器 local APIC 页表映射 */
-	color_printk(BLUE, WHITE, "[SMP]Pagetable remaping:%#010x,index:%d\t\n", ph_addr, i);
+	// color_printk(BLUE, WHITE, "[SMP]Pagetable remaping:%#010x,index:%d\t\n", ph_addr, i);
 	
 	mem_addr64 *tmp;
 	mem_addr8 *LAPIC_addr = (mem_addr8 *)Phy_To_Virt(ph_addr);
@@ -63,7 +63,7 @@ void APU_LAPIC_pagetable_remap(mem_addr32 ph_addr, int i) {
 
 	// color_printk(BLUE,WHITE,"[SMP]3:%#018lx\t%#018lx\t\n",(mem_addr64)tmp,(mem_addr64)*tmp);
 
-	color_printk(BLUE,WHITE,"[SMP]APU_local_APIC_map[%d].physical_address:%#010x\t\t\n", i,APU_local_APIC_map[i].physical_address);
+	// color_printk(BLUE,WHITE,"[SMP]APU_local_APIC_map[%d].physical_address:%#010x\t\t\n", i,APU_local_APIC_map[i].physical_address);
 	color_printk(BLUE,WHITE,"[SMP]APU_local_APIC_map[%d].virtual_address:%#018lx\t\t\n", i,(mem_addr64)APU_local_APIC_map[i].virtual_index_address);
 
 	flush_tlb();
@@ -97,9 +97,6 @@ void SMP_init() {
 extern int global_i;
 
 void Start_SMP() {
-	/*
-	* local APIC寄存器占用了0xf?e00000 - 0xf?e00400 内存，其中?为任意数
-	*/
 	unsigned long x;
 
 	color_printk(RED,YELLOW,"[SMP]APU[%d] Starting...\n", global_i);
@@ -110,42 +107,42 @@ void Start_SMP() {
 		goto loop_hlt;
 	}
 
-	color_printk(RED,YELLOW,"[SMP]set xAPIC\t\n");
+	// color_printk(RED,YELLOW,"[SMP]set xAPIC\t\n");
 	
 	x = rdmsr(0x1b);
 	// wrmsr(0x1b, x|(global_i << 12)|(1 << 24));	// 0xffe0?000
 	wrmsr(0x1b, (x&0xfff)|(0xfee00000 - (global_i << 24)));	// 0xf?e00000
 	x = rdmsr(0x1b);
 
-	color_printk(RED,YELLOW,"[SMP]eax:%#010x\t\n",x);
+	// color_printk(RED,YELLOW,"[SMP]eax:%#010x\t\n",x);
 	
 	/* 检查是否成功开启 */
 	if(x&0x800) {
-		color_printk(RED,YELLOW,"[SMP]AP xAPIC enabled\t\n");
+		// color_printk(RED,YELLOW,"[SMP]AP xAPIC enabled\t\n");
 		APU_LAPIC_pagetable_remap(x&0xfffff000, global_i - 1);
 	} else {
 		color_printk(RED,YELLOW,"[SMP]failed to enable AP APIC&xAPIC\t\n");
 		goto loop_hlt;
 	}
 		
-	color_printk(RED, YELLOW, "[SMP]SVR:%#010x\t\n", *APU_local_APIC_map[global_i - 1].virtual_svr_address);
+	// color_printk(RED, YELLOW, "[SMP]SVR:%#010x\t\n", *APU_local_APIC_map[global_i - 1].virtual_svr_address);
 	/* 使能SVR第8位，激活APIC(默认在上面设置寄存器时已经激活) */
 	*APU_local_APIC_map[global_i - 1].virtual_svr_address |= (1 << 8);
 	if(*APU_local_APIC_map[global_i - 1].virtual_version_address & (1 << 24))	/* 使能SVR第12位 */
 		*APU_local_APIC_map[global_i - 1].virtual_svr_address |= (1 << 12);
-	else
-		color_printk(RED, WHITE, "[SMP]Disable broadcast EOI is not support, APIC version reg:%#010x\t\n", *APU_local_APIC_map[global_i - 1].virtual_version_address);	
-	if(*APU_local_APIC_map[global_i - 1].virtual_svr_address&0x100)
-		color_printk(RED,YELLOW,"[SMP]SVR[8] enabled\t");
-	if(*APU_local_APIC_map[global_i - 1].virtual_svr_address&0x1000)
-		color_printk(RED,YELLOW,"[SMP]SVR[12] enabled\t");
+	// else
+	// 	color_printk(RED, WHITE, "[SMP]Disable broadcast EOI is not support, APIC version reg:%#010x\t\n", *APU_local_APIC_map[global_i - 1].virtual_version_address);	
+	// if(*APU_local_APIC_map[global_i - 1].virtual_svr_address&0x100)
+	// 	color_printk(RED,YELLOW,"[SMP]SVR[8] enabled\t");
+	// if(*APU_local_APIC_map[global_i - 1].virtual_svr_address&0x1000)
+	// 	color_printk(RED,YELLOW,"[SMP]SVR[12] enabled\t");
 	
 	/* 输出ID寄存器 */
 	color_printk(RED,YELLOW,"[SMP]APIC&xAPIC ID:%#010x\t\n", *APU_local_APIC_map[global_i - 1].virtual_id_address);
 	
 	load_TR(10 + global_i * 2);
 	
-	color_printk(RED,YELLOW,"[SMP]APU[%d] Startup complete.\n", global_i);
+	color_printk(RED,GREEN,"[SMP]APU[%d] Startup complete.\n", global_i);
 	
 	// x = 1/0;
 	

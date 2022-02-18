@@ -1,8 +1,7 @@
-/* 时间 */
+/* 墙上时钟 */
 #include <time.h>
 #include <asm.h>
 
-/* 读取cmos */
 #define CMOS_READ(addr) ({ \
 io_out8(0x70,0x80 | addr); \
 io_in8(0x71); \
@@ -18,7 +17,7 @@ int get_cmos_time(struct time *time) {
 		time->hour =   CMOS_READ(0x04);	
 		time->minute = CMOS_READ(0x02);
 		time->second = CMOS_READ(0x00);
-	} while(time->second != CMOS_READ(0x00));	/* 多次获取以同步时间 */
+	} while(time->second != CMOS_READ(0x00));
 	
 	io_out8(0x70,0x00); 
 

@@ -1,10 +1,9 @@
-/* 时间 */
+/* 墙上时钟 */
 
 #ifndef __TIME_H__
 #define __TIME_H__
 
 struct time {
-	/* 记录时间 */
 	int second;
 	int minute;
 	int hour;
