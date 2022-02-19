@@ -22,6 +22,7 @@
 #include <SMP.h>
 #include <spinlock.h>
 #include <time.h>
+#include <timer.h>
 #include <PIT.h>
 
 struct Global_Memory_Descriptor memory_management_struct = {{0},0};
@@ -69,7 +70,7 @@ void KaliKernel(void) {
 	
 	sys_vector_init();
 
-	// init_cpu();
+	init_cpu();
 
 	memory_management_struct.start_code = (unsigned long)& _text;
 	memory_management_struct.end_code   = (unsigned long)& _etext;

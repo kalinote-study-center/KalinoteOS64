@@ -19,7 +19,9 @@ hw_int_controller PIT_int_controller =  {
 
 void PIT_handler(unsigned long nr, unsigned long parameter, struct pt_regs * regs) {
 	jiffies++;
-	set_softirq_status(TIMER_SIRQ);
+
+	if(timer_list_head->expire_jiffies <= jiffies)
+		set_softirq_status(TIMER_SIRQ);
 }
 
 extern struct time time;
