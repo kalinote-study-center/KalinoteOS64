@@ -26,6 +26,12 @@ RFLAGS	=	0xa8
 OLDRSP	=	0xb0
 OLDSS	=	0xb8
 
+////struct task_struct member offset
+TSK_STATE	=	0x00
+TSK_FLAGS	=	0x08
+TSK_SIGNAL	=	0x10
+
+
 RESTORE_ALL:
 	popq	%r15;		
 	popq	%r14;		
@@ -54,18 +60,28 @@ RESTORE_ALL:
 	andq	%rsp,	reg
 
 ret_from_exception:
-	/*GET_CURRENT(%ebx)	need rewrite*/
+
 ENTRY(ret_from_intr)
 	movq	$-1,	%rcx
 	testq	softirq_status(%rip),	%rcx
 	jnz	softirq_handler
-	jmp	RESTORE_ALL	/*need rewrite*/
+	GET_CURRENT(%rbx)
+	movq	TSK_FLAGS(%rbx),	%rcx
+	testq	$2,	%rcx
+	jnz	reschedule
+	jmp	RESTORE_ALL	
 
 softirq_handler:
 	callq	do_softirq
+	GET_CURRENT(%rbx)
+	movq	TSK_FLAGS(%rbx),	%rcx
+	testq	$2,	%rcx
+	jnz	reschedule
 	jmp	RESTORE_ALL	
 
-/* 系统调用 */
+reschedule:
+	callq	schedule
+	jmp	RESTORE_ALL
 ENTRY(system_call)
 	sti
 	subq	$0x38,	%rsp			 

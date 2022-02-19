@@ -9,6 +9,7 @@
 #include <gate.h>
 #include <spinlock.h>
 #include <interrupt.h>
+#include <mtask.h>
 
 struct local_APIC_map APU_local_APIC_map[4];	/* 或许以后可以把引导处理器也加进来 */
 
@@ -140,11 +141,10 @@ void Start_SMP() {
 	/* 输出ID寄存器 */
 	color_printk(RED,YELLOW,"[SMP]APIC&xAPIC ID:%#010x\t\n", *APU_local_APIC_map[global_i - 1].virtual_id_address);
 	
+	memset(current,0,sizeof(struct task_struct));
 	load_TR(10 + global_i * 2);
 	
 	color_printk(RED,GREEN,"[SMP]APU[%d] Startup complete.\n", global_i);
-	
-	// x = 1/0;
 	
 loop_hlt:
 	global_i++;// 这个++本来应该在main.c的循环中设置的，但是不知道为什么如果放在那里会导致值混乱

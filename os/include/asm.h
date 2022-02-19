@@ -98,5 +98,18 @@ inline void wrmsr(unsigned long address,unsigned long value) {
 	__asm__ __volatile__("wrmsr	\n\t"::"d"(value >> 32),"a"(value & 0xffffffff),"c"(address):"memory");	
 }
 
+inline unsigned long get_rsp() {
+	unsigned long tmp = 0;
+	__asm__ __volatile__	( "movq	%%rsp, %0	\n\t":"=r"(tmp)::"memory");
+	return tmp;
+}
+inline unsigned long get_rflags() {
+	unsigned long tmp = 0;
+	__asm__ __volatile__	("pushfq	\n\t"
+				 "movq	(%%rsp), %0	\n\t"
+				 "popfq	\n\t"
+				:"=r"(tmp)::"memory");
+	return tmp;
+}
 
 #endif

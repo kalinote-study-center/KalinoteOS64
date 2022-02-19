@@ -480,7 +480,7 @@ void APIC_init() {
 	/* Hyper-V没有此问题 */
 	/* 怀疑是BOCHS平台的问题，因为从开始到现在已经遇到过很多次类似情况了 */
 	/* TODO：需要进一步检查并解决 */
-	io_sti();
+	// io_sti();
 }
 
 void do_IRQ(struct pt_regs * regs,unsigned long nr)	{

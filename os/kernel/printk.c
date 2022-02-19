@@ -7,6 +7,7 @@
 #include <memory.h>
 #include <kernel.h>
 #include <spinlock.h>
+#include <asm.h>
 
 char printk_buf[4096] = {0};
 
@@ -361,7 +362,8 @@ int color_printk(color_code FRcolor,color_code BKcolor,const char * fmt,...) {
 	if(printk_info.mode)		/* 如果处于图形模式，则禁用内核打印 */
 		return 0;
 	
-	spin_lock(&printk_info.printk_lock);
+	if(get_rflags() & 0x200UL)
+		spin_lock(&printk_info.printk_lock);
 	
 	va_start(args, fmt);
 	i = vsprintf(printk_buf,fmt, args);
@@ -419,7 +421,8 @@ Label_tab:
 
 	}
 	
-	spin_unlock(&printk_info.printk_lock);
+	if(get_rflags() & 0x200UL)
+		spin_unlock(&printk_info.printk_lock);
 	
 	return i;
 }

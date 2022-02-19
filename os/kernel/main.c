@@ -24,6 +24,7 @@
 #include <time.h>
 #include <timer.h>
 #include <PIT.h>
+#include <schedule.h>
 
 struct Global_Memory_Descriptor memory_management_struct = {{0},0};
 volatile int global_i = 0;
@@ -100,12 +101,11 @@ void KaliKernel(void) {
 		for(;;)
 			io_hlt();
 	#endif
+	color_printk(RED,BLACK,"[init]schedule init \n");
+	schedule_init();
+	
 	color_printk(RED,BLACK,"[init]Soft IRQ init \n");
 	softirq_init();
-	
-	color_printk(RED,BLACK,"[init]timer & clock init \n");
-	timer_init();
-	PIT_init();
 	
 	color_printk(RED,BLACK,"[init]keyboard init \n");
 	keyboard_init();
@@ -137,6 +137,17 @@ void KaliKernel(void) {
 	*local_APIC_map.virtual_icr_low_address = 0xc8;
 	*local_APIC_map.virtual_icr_high_address = (1 << 24);	/* 目标处理器为1号APU */
 	*local_APIC_map.virtual_icr_low_address = 0xc9;
+
+	
+	color_printk(RED,BLACK,"[init]Timer init \n");
+	timer_init();
+	
+	color_printk(RED,BLACK,"[init]PIC init \n");
+	PIT_init();
+
+	color_printk(RED,BLACK,"[init]task init \n");
+	io_sti();
+	task_init();
 
 	// init_screen(printk_info.buf, printk_info.screen_x, printk_info.screen_y);		/* 初始化屏幕图形界面 */
 

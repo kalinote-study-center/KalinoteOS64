@@ -20,6 +20,5 @@ int get_cmos_time(struct time *time) {
 	} while(time->second != CMOS_READ(0x00));
 	
 	io_out8(0x70,0x00); 
-
-	io_sti();
+	
 }
