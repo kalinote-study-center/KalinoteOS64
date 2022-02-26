@@ -3,6 +3,31 @@
 #include <printk.h>
 #include <lib.h>
 
+/* 全局变量 */
+
+unsigned long * Global_CR3 = NULL;
+struct Global_Memory_Descriptor memory_management_struct = {{0},0};
+struct Slab_cache kmalloc_cache_size[16] = 
+{
+	{32	,0	,0	,NULL	,NULL	,NULL	,NULL},
+	{64	,0	,0	,NULL	,NULL	,NULL	,NULL},
+	{128	,0	,0	,NULL	,NULL	,NULL	,NULL},
+	{256	,0	,0	,NULL	,NULL	,NULL	,NULL},
+	{512	,0	,0	,NULL	,NULL	,NULL	,NULL},
+	{1024	,0	,0	,NULL	,NULL	,NULL	,NULL},			//1KB
+	{2048	,0	,0	,NULL	,NULL	,NULL	,NULL},
+	{4096	,0	,0	,NULL	,NULL	,NULL	,NULL},			//4KB
+	{8192	,0	,0	,NULL	,NULL	,NULL	,NULL},
+	{16384	,0	,0	,NULL	,NULL	,NULL	,NULL},
+	{32768	,0	,0	,NULL	,NULL	,NULL	,NULL},
+	{65536	,0	,0	,NULL	,NULL	,NULL	,NULL},			//64KB
+	{131072	,0	,0	,NULL	,NULL	,NULL	,NULL},			//128KB
+	{262144	,0	,0	,NULL	,NULL	,NULL	,NULL},
+	{524288	,0	,0	,NULL	,NULL	,NULL	,NULL},
+	{1048576,0	,0	,NULL	,NULL	,NULL	,NULL},			//1MB
+};
+
+/* 全局变量 */
 
 unsigned long page_init(struct Page * page,unsigned long flags) {
 	page->attribute |= flags;
@@ -57,7 +82,6 @@ void init_memory() {
 	for(i = 0;i < 32;i++) {
 		if(p->type == 1)
 		color_printk(ORANGE,BLACK,"[memory]Address:%#018lx\tLength:%#018lx\tType:%#010x\n",p->address,p->length,p->type);
-		unsigned long tmp = 0;
 		if(p->type == 1)
 			TotalMem +=  p->length;
 
@@ -111,7 +135,6 @@ void init_memory() {
 		unsigned long start,end;
 		struct Zone * z;
 		struct Page * p;
-		unsigned long * b;
 
 		if(memory_management_struct.e820[i].type != 1)
 			continue;
@@ -193,7 +216,7 @@ void init_memory() {
 	color_printk(PURPLE,BLACK,"[memory]**Global_CR3\t:%#018lx\n",*Phy_To_Virt(*Phy_To_Virt(Global_CR3) & (~0xff)) & (~0xff));
 	color_printk(ORANGE,BLACK,"[memory]1.memory_management_struct.bits_map:%#018lx\tzone_struct->page_using_count:%d\tzone_struct->page_free_count:%d\n",*memory_management_struct.bits_map,memory_management_struct.zones_struct->page_using_count,memory_management_struct.zones_struct->page_free_count);
 
-	/* 这里不能情况相关重映射，因为还要对其他CPU核心进行页表的配置 */
+	/* 这里不能清空相关重映射，因为还要对其他CPU核心进行页表的配置 */
 	//for(i = 0;i < 10;i++)
 	//	*(Phy_To_Virt(Global_CR3)  + i) = 0UL;
 	
@@ -852,13 +875,13 @@ void pagetable_init() {
 	Global_CR3 = Get_gdt();
 
 	tmp = (unsigned long *)(((unsigned long)Phy_To_Virt((unsigned long)Global_CR3 & (~ 0xfffUL))) + 8 * 256);
-	color_printk(YELLOW,BLACK,"[memory]1:%#018lx,%#018lx\t\t\n",(unsigned long)tmp,*tmp);
+	// color_printk(YELLOW,BLACK,"[memory]1:%#018lx,%#018lx\t\t\n",(unsigned long)tmp,*tmp);
 
 	tmp = Phy_To_Virt(*tmp & (~0xfffUL));
-	color_printk(YELLOW,BLACK,"[memory]2:%#018lx,%#018lx\t\t\n",(unsigned long)tmp,*tmp);
+	// color_printk(YELLOW,BLACK,"[memory]2:%#018lx,%#018lx\t\t\n",(unsigned long)tmp,*tmp);
 
 	tmp = Phy_To_Virt(*tmp & (~0xfffUL));
-	color_printk(YELLOW,BLACK,"[memory]3:%#018lx,%#018lx\t\t\n",(unsigned long)tmp,*tmp);
+	// color_printk(YELLOW,BLACK,"[memory]3:%#018lx,%#018lx\t\t\n",(unsigned long)tmp,*tmp);
 
 	for(i = 0;i < memory_management_struct.zones_size;i++) {
 		struct Zone * z = memory_management_struct.zones_struct + i;
@@ -887,8 +910,8 @@ void pagetable_init() {
 
 			set_pdt(tmp,mk_pdt(p->PHY_address,PAGE_KERNEL_Page));
 
-			 if(j % 50 == 0)
-			 	color_printk(GREEN,BLACK,"[memory]@:%#018lx,%#018lx\t\n",(unsigned long)tmp,*tmp);
+//			 if(j % 50 == 0)
+//			 	color_printk(GREEN,BLACK,"[memory]@:%#018lx,%#018lx\t\n",(unsigned long)tmp,*tmp);
 		}
 	}
 

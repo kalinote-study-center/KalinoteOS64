@@ -1,4 +1,9 @@
-#include "linkage.h"
+#include <linkage.h>
+
+
+/*
+* 这个文件的程序用于处理中断、异常、陷阱、系统调用、特权级切换、进程调度等程序间的调用和切换
+*/
 
 /* 各寄存器在栈中保存的位置 */
 R15	=	0x00
@@ -26,11 +31,10 @@ RFLAGS	=	0xa8
 OLDRSP	=	0xb0
 OLDSS	=	0xb8
 
-////struct task_struct member offset
+/* PCB结构体中相关数据的偏移 */
 TSK_STATE	=	0x00
 TSK_FLAGS	=	0x08
 TSK_SIGNAL	=	0x10
-
 
 RESTORE_ALL:
 	popq	%r15;		
@@ -55,12 +59,17 @@ RESTORE_ALL:
 	addq	$0x10,	%rsp;	
 	iretq;
 
-#define GET_CURRENT(reg)	\
-	movq	$-32768,reg;	\
-	andq	%rsp,	reg
+/**
+* #define GET_CURRENT(reg)	\
+* 	movq	$-32768,reg;	\
+* 	andq	%rsp,	reg
+*/
+/* now成员在task_schedule中的偏移量为0x10 */
+#define GET_CURRENT(reg)		\
+	movq	now_task(%rip),reg
 
 ret_from_exception:
-
+	
 ENTRY(ret_from_intr)
 	movq	$-1,	%rcx
 	testq	softirq_status(%rip),	%rcx
@@ -69,7 +78,7 @@ ENTRY(ret_from_intr)
 	movq	TSK_FLAGS(%rbx),	%rcx
 	testq	$2,	%rcx
 	jnz	reschedule
-	jmp	RESTORE_ALL	
+	jmp	RESTORE_ALL
 
 softirq_handler:
 	callq	do_softirq
@@ -82,8 +91,11 @@ softirq_handler:
 reschedule:
 	callq	schedule
 	jmp	RESTORE_ALL
+
+
+/* 系统调用 */
 ENTRY(system_call)
-	sti
+	sti								/* 调用SYSENTER指令会复位IF中断标志位，导致无法接受中断，在这里进行开启 */
 	subq	$0x38,	%rsp			 
 	cld;					 
 
@@ -134,11 +146,13 @@ ENTRY(ret_system_call)
 	movq	%rax,	%ds			 
 	popq	%rax				 
 	movq	%rax,	%es			 
-	popq	%rax				 
-	addq	$0x38,	%rsp	
+	popq	%rax
+	addq	$0x38,	%rsp
 	.byte	0x48		 
 	sysexit	
 
+
+/* 下面是错误及异常 */
 ENTRY(divide_error)
 	pushq	$0
 	pushq	%rax

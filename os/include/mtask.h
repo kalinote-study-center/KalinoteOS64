@@ -3,11 +3,11 @@
 #ifndef __MTASK_H__
 #define __MTASK_H__
 
+#include <memory.h>
 #include <lib.h>	/* List结构 */
 #include <types.h>
 #include <cpu.h>
 #include <ptrace.h>
-#include <memory.h>
 
 #define KERNEL_CS 	(0x08)
 #define	KERNEL_DS 	(0x10)
@@ -34,10 +34,6 @@ extern char _end;
 
 extern unsigned long _stack_start;
 
-/*
-
-*/
-
 #define TASK_RUNNING		(1 << 0)
 #define TASK_INTERRUPTIBLE	(1 << 1)
 #define	TASK_UNINTERRUPTIBLE	(1 << 2)
@@ -49,15 +45,15 @@ extern unsigned long _stack_start;
 */
 
 
-struct mm_struct
-{
-	pml4t_t *pgd;	//page table point
+struct mm_struct {
+	/* 该结构体描述了进程页表和各程序段信息 */
+	pml4t_t *pgd;								/* 内存页表指针 */
 	
-	unsigned long start_code,end_code;
-	unsigned long start_data,end_data;
-	unsigned long start_rodata,end_rodata;
-	unsigned long start_brk,end_brk;
-	unsigned long start_stack;	
+	unsigned long start_code,end_code;			/* 代码段空间 */
+	unsigned long start_data,end_data;			/* 数据段空间 */
+	unsigned long start_rodata,end_rodata;		/* 只读数据空间 */
+	unsigned long start_brk,end_brk;			/* 动态内存分配区(堆) */
+	unsigned long start_stack;					/* 应用栈基地址 */
 };
 
 /*
@@ -79,7 +75,8 @@ struct thread_struct
 	unsigned long error_code;
 };
 
-struct task_struct {
+struct task_struct
+{
 	volatile long state;
 	unsigned long flags;
 	long signal;
@@ -93,19 +90,21 @@ struct task_struct {
 					/*0xffff,8000,0000,0000 - 0xffff,ffff,ffff,ffff kernel*/
 	long pid;
 	long priority;
-	long vrun_time;
+	long vrun_time;		/* 进程虚拟运行时间 */
 };
 
+/* task结构体的flag */
 #define PF_KTHREAD	(1UL << 0)
 #define NEED_SCHEDULE	(1UL << 1)
 
-union task_union {
+union task_union
+{
 	struct task_struct task;
 	unsigned long stack[STACK_SIZE / sizeof(unsigned long)];
 }__attribute__((aligned (8)));	//8Bytes align
 
-struct mm_struct init_mm;
-struct thread_struct init_thread;
+// extern struct mm_struct init_mm;
+// extern struct thread_struct init_thread;
 
 #define INIT_TASK(tsk)	\
 {			\
@@ -120,27 +119,8 @@ struct thread_struct init_thread;
 	.vrun_time = 0		\
 }
 
-union task_union init_task_union __attribute__((__section__ (".data.init_task"))) = {INIT_TASK(init_task_union.task)};
-
-struct task_struct *init_task[NR_CPUS] = {&init_task_union.task,0};
-
-struct mm_struct init_mm = {0};
-
-struct thread_struct init_thread = {
-	.rsp0 = (unsigned long)(init_task_union.stack + STACK_SIZE / sizeof(unsigned long)),
-	.rsp = (unsigned long)(init_task_union.stack + STACK_SIZE / sizeof(unsigned long)),
-	.fs = KERNEL_DS,
-	.gs = KERNEL_DS,
-	.cr2 = 0,
-	.trap_nr = 0,
-	.error_code = 0
-};
-
-/*
-
-*/
-
-struct tss_struct {
+struct tss_struct
+{
 	unsigned int  reserved0;
 	unsigned long rsp0;
 	unsigned long rsp1;
@@ -176,15 +156,7 @@ struct tss_struct {
 	.iomapbaseaddr = 0	\
 }
 
-struct tss_struct init_tss[NR_CPUS] = { [0 ... NR_CPUS-1] = INIT_TSS };
-
-/*
-
-*/
-
-
-inline	struct task_struct * get_current()
-{
+inline	struct task_struct * get_current() {
 	struct task_struct * current = NULL;
 	__asm__ __volatile__ ("andq %%rsp,%0	\n\t":"=r"(current):"0"(~32767UL));
 	return current;
@@ -195,10 +167,6 @@ inline	struct task_struct * get_current()
 #define GET_CURRENT			\
 	"movq	%rsp,	%rbx	\n\t"	\
 	"andq	$-32768,%rbx	\n\t"
-
-/*
-
-*/
 
 
 #define switch_to(prev,next)			\
@@ -223,7 +191,6 @@ do{							\
 /*
 
 */
-
 unsigned long do_fork(struct pt_regs * regs, unsigned long clone_flags, unsigned long stack_start, unsigned long stack_size);
 void task_init();
 
@@ -231,20 +198,22 @@ void task_init();
 
 typedef unsigned long (* system_call_t)(struct pt_regs * regs);
 
-unsigned long no_system_call(struct pt_regs * regs) {
-	color_printk(RED,BLACK,"no_system_call is calling,NR:%#04x\n",regs->rax);
-	return -1;
-}
+unsigned long no_system_call(struct pt_regs * regs);
 
-unsigned long sys_printf(struct pt_regs * regs) {
-	color_printk(BLACK,WHITE,(char *)regs->rdi);
-	return 1;
-}
+unsigned long sys_printf(struct pt_regs * regs);
 
-system_call_t system_call_table[MAX_SYSTEM_CALL_NR] = {
-	[0] = no_system_call,
-	[1] = sys_printf,
-	[2 ... MAX_SYSTEM_CALL_NR-1] = no_system_call
-};
+extern void ret_system_call(void);
+extern void system_call(void);
+
+extern system_call_t system_call_table[MAX_SYSTEM_CALL_NR];
+
+
+extern struct task_struct *init_task[NR_CPUS];
+extern union task_union init_task_union;
+
+extern struct mm_struct init_mm;
+extern struct thread_struct init_thread;
+
+extern struct tss_struct init_tss[NR_CPUS];
 
 #endif

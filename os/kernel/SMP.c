@@ -11,7 +11,11 @@
 #include <interrupt.h>
 #include <mtask.h>
 
+/* 全局变量 */
 struct local_APIC_map APU_local_APIC_map[4];	/* 或许以后可以把引导处理器也加进来 */
+volatile int global_i = 0;
+spinlock_T SMP_lock;
+/* 全局变量 */
 
 void APU_LAPIC_pagetable_remap(mem_addr32 ph_addr, int i) {
 	/* AP处理器 local APIC 页表映射 */
@@ -95,8 +99,6 @@ void SMP_init() {
 	memset(SMP_IPI_desc,0,sizeof(irq_desc_T) * 10);
 }
 
-extern int global_i;
-
 void Start_SMP() {
 	unsigned long x;
 
@@ -145,6 +147,8 @@ void Start_SMP() {
 	load_TR(10 + global_i * 2);
 	
 	color_printk(RED,GREEN,"[SMP]APU[%d] Startup complete.\n", global_i);
+	
+	// x = 1/0;
 	
 loop_hlt:
 	global_i++;// 这个++本来应该在main.c的循环中设置的，但是不知道为什么如果放在那里会导致值混乱

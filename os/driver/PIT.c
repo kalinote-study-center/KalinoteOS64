@@ -1,12 +1,11 @@
 /* 可编程间隔化定时器 */
 #include <PIT.h>
-#include <time.h>
+#include <printk.h>
 #include <asm.h>
 #include <lib.h>
-#include <timer.h>
 #include <APIC.h>
-#include <interrupt.h>
-#include <printk.h>
+#include <time.h>
+#include <timer.h>
 #include <softirq.h>
 #include <mtask.h>
 #include <schedule.h>
@@ -24,22 +23,28 @@ void PIT_handler(unsigned long nr, unsigned long parameter, struct pt_regs * reg
 
 	if(timer_list_head->expire_jiffies <= jiffies)
 		set_softirq_status(TIMER_SIRQ);
-	
-	switch(current->priority) {
+
+	if(jiffies > 25)
+		return;
+	switch(now_task->priority) {
 		case 0:
 		case 1:
 			task_schedule.CPU_exec_task_jiffies--;
-			current->vrun_time += 1;
+			now_task->vrun_time += 1;
 			break;
 		case 2:
 		default:
 			task_schedule.CPU_exec_task_jiffies -= 2;
-			current->vrun_time += 2;
+			now_task->vrun_time += 2;
 			break;
 	}
-
+	
+	// color_printk(BLUE,WHITE,"[PIT]task_schedule.CPU_exec_task_jiffies:%ld\t\n", task_schedule.CPU_exec_task_jiffies);
+	// color_printk(BLACK,WHITE,"[PIT]now_task:%018lx,now_task->vrun_time:%ld\t\n",now_task, now_task->vrun_time);
+	
 	if(task_schedule.CPU_exec_task_jiffies <= 0)
-		current->flags |= NEED_SCHEDULE;
+		now_task->flags |= NEED_SCHEDULE;
+
 }
 
 extern struct time time;

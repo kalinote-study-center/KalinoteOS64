@@ -6,18 +6,18 @@
 #include <lib.h>
 #include <types.h>
 
-unsigned long volatile jiffies = 0;
+extern unsigned long volatile jiffies;
 
 struct timer_list {
-	/* 定时器队列 */
-	struct timer_list *next_timer;		/* 指向下一个timer */
+	/* 定时器队列(32字节,2M的话可以最多放65536个，实际应该用不了这么多) */
 	unsigned long expire_jiffies;
 	void (* func)(void * data);
 	void *data;
+	struct timer_list *next_timer;			/* 指向下一个timer */
 };
 
-struct timer_list timer_list_last;		/* 这个timer永不过期，永远在队列最后面 */
-struct timer_list *timer_list_head;
+extern struct timer_list timer_list_last;
+extern struct timer_list *timer_list_head;
 
 /* 定时器操作 */
 void init_timer(struct timer_list * timer,void (* func)(void * data),void *data,unsigned long expire_jiffies);

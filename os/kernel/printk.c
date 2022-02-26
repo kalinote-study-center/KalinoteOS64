@@ -362,7 +362,7 @@ int color_printk(color_code FRcolor,color_code BKcolor,const char * fmt,...) {
 	if(printk_info.mode)		/* 如果处于图形模式，则禁用内核打印 */
 		return 0;
 	
-	if(get_rflags() & 0x200UL)
+	if(get_rflags() & 0x200UL)		/* 中断函数执行时不使用自旋锁，防止死锁 */
 		spin_lock(&printk_info.printk_lock);
 	
 	va_start(args, fmt);

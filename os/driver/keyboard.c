@@ -21,7 +21,7 @@ void keyboard_handler(unsigned long nr, unsigned long parameter, struct pt_regs 
 	unsigned char x;
 	x = io_in8(0x60);
 	
-	color_printk(WHITE, BLACK, "(K:%02x)\n",x);
+	// color_printk(WHITE, BLACK, "(K:%02x)\n",x);
 	
 	if(p_kb->p_head == p_kb->buf + KB_BUF_SIZE)
 		p_kb->p_head = p_kb->buf;
@@ -159,8 +159,8 @@ void analysis_keycode() {
 				break;
 		}			
 
-		if(key)
-			color_printk(RED,BLACK,"(K:%c)\t",key);
+		// if(key)
+		// 	color_printk(RED,BLACK,"(K:%c)\t",key);
 	}
 }
 

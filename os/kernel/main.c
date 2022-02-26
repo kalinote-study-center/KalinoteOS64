@@ -7,7 +7,6 @@
 #include <cpu.h>
 #include <graphic.h>
 #include <kernel.h>
-#include <ptrace.h>
 #include <asm.h>
 
 #if APIC
@@ -21,14 +20,8 @@
 #include <disk.h>
 #include <SMP.h>
 #include <spinlock.h>
-#include <time.h>
-#include <timer.h>
 #include <PIT.h>
-#include <schedule.h>
-
-struct Global_Memory_Descriptor memory_management_struct = {{0},0};
-volatile int global_i = 0;
-extern spinlock_T SMP_lock;
+#include <timer.h>
 
 void KaliKernel(void) {
 	/* KalinoteOS64 内核程序入口 */
@@ -40,7 +33,6 @@ void KaliKernel(void) {
 	* 已经将0xab000000映射到0xffff8000ab000000(其中，ab是具体地址变量)
 	* 如果更改VRAM地址，需要对printk中的frame_buffer_init函数进行相应修改
 	*/
-	struct time time;
 	unsigned int * tss = NULL;
 	/* 配置printk_info相关数据 */
 	printk_info.mode = 0;			/* 文字命令模式 */
@@ -119,14 +111,14 @@ void KaliKernel(void) {
 	*local_APIC_map.virtual_icr_high_address = 0;
 	*local_APIC_map.virtual_icr_low_address = 0xc4500;	//INIT IPI
 	
-	for(global_i = 1;global_i < 12;) {
+	for(global_i = 1;global_i < 8;) {
 		spin_lock(&SMP_lock);
 		
 		_stack_start = (unsigned long)kmalloc(STACK_SIZE,0) + STACK_SIZE;
 		tss = (unsigned int *)kmalloc(128,0);
 		set_tss_descriptor(10 + global_i * 2,tss);
 		set_tss64(tss,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start);
-
+	
 		*local_APIC_map.virtual_icr_high_address = (global_i << 24);		/* 指定投递目标 */
 		*local_APIC_map.virtual_icr_low_address = 0x620;	//Start-up IPI
 		*local_APIC_map.virtual_icr_high_address = (global_i << 24);
@@ -137,12 +129,14 @@ void KaliKernel(void) {
 	*local_APIC_map.virtual_icr_low_address = 0xc8;
 	*local_APIC_map.virtual_icr_high_address = (1 << 24);	/* 目标处理器为1号APU */
 	*local_APIC_map.virtual_icr_low_address = 0xc9;
-
 	
-	color_printk(RED,BLACK,"[init]Timer init \n");
+	while(global_i < 8)		/* 为了防止混乱，等待AP处理器初始化结束再继续执行 */
+		io_hlt();
+
+	color_printk(RED,BLACK,"[init]timer init \n");
 	timer_init();
 	
-	color_printk(RED,BLACK,"[init]PIC init \n");
+	color_printk(RED,BLACK,"[init]PIT init \n");
 	PIT_init();
 
 	color_printk(RED,BLACK,"[init]task init \n");
@@ -150,6 +144,7 @@ void KaliKernel(void) {
 	task_init();
 
 	// init_screen(printk_info.buf, printk_info.screen_x, printk_info.screen_y);		/* 初始化屏幕图形界面 */
+	color_printk(BLACK,WHITE,"[init]current:%018lx,current->vrun_time:%ld\t\n",current, current->vrun_time);
 
 	while(1) {
 		if(p_kb->count)

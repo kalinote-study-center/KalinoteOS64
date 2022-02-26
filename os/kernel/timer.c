@@ -4,9 +4,19 @@
 #include <printk.h>
 #include <lib.h>
 #include <memory.h>
+#include <mtask.h>
+#include <schedule.h>
+#include <asm.h>
 
-void test_timer(void * data) {
-	color_printk(BLUE,WHITE,"test_timer");
+/* 全局变量 */
+unsigned long volatile jiffies = 0;								/* 系统运行tik */
+struct timer_list timer_list_last;								/* 这个timer永不过期，永远在队列最后面 */
+struct timer_list *timer_list_head = &timer_list_last;
+/* 全局变量 */
+
+void test_timer(void *data) {
+	/* 为了测试，开机延迟5秒后触发进程调度 */
+	color_printk(BLUE,WHITE,"[timer]start_schedule_timer\t\n");
 }
 
 void init_timer(struct timer_list * timer,void (* func)(void * data),void *data,unsigned long expire_jiffies) {
@@ -52,8 +62,7 @@ void del_timer(struct timer_list * timer) {
 
 void timer_init() {
 	jiffies = 0;
-	init_timer(&timer_list_last,NULL,NULL,0xffffffffffffffffUL);		/* 永不过期，永远在最后一个 */
-	timer_list_head = &timer_list_last;
+	init_timer(&timer_list_last,NULL,NULL,-1UL);		/* 永不过期，永远在最后一个 */
 	register_softirq(0,&do_timer,NULL);
 	
 	struct timer_list *tmp = NULL;
@@ -68,5 +77,5 @@ void do_timer(void * data) {
 		timer_list_head->func(timer_list_head->data);	/* 执行函数 */
 		del_timer(timer_list_head);						/* 删除定时器 */
 	}
-	color_printk(RED,WHITE,"(PIT:%ld)",jiffies);
+	color_printk(RED,WHITE,"(PIT:%ld)\n",jiffies);
 }

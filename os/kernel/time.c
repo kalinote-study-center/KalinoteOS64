@@ -7,9 +7,7 @@ io_out8(0x70,0x80 | addr); \
 io_in8(0x71); \
 })
 
-int get_cmos_time(struct time *time) {
-	io_cli();
-
+void get_cmos_time(struct time *time) {
 	do {
 		time->year =   CMOS_READ(0x09) + CMOS_READ(0x32) * 0x100;
 		time->month =  CMOS_READ(0x08);
@@ -20,5 +18,4 @@ int get_cmos_time(struct time *time) {
 	} while(time->second != CMOS_READ(0x00));
 	
 	io_out8(0x70,0x00); 
-	
 }

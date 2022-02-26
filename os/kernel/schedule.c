@@ -5,10 +5,17 @@
 #include <printk.h>
 #include <timer.h>
 
+/* 全局变量 */
+
+// struct schedule task_schedule;
+
+/* 全局变量 */
+
 struct task_struct *get_next_task() {
 	struct task_struct * tsk = NULL;
 
-	if(list_is_empty(&task_schedule.task_queue.list)) {
+	if(list_is_empty(&task_schedule.task_queue.list))
+	{
 		return &init_task_union.task;
 	}
 
@@ -23,31 +30,38 @@ struct task_struct *get_next_task() {
 void insert_task_queue(struct task_struct *tsk) {
 	struct task_struct *tmp = container_of(list_next(&task_schedule.task_queue.list),struct task_struct,list);
 
+	// color_printk(BLUE,WHITE,"[schedule]insert_task:%018lx\t\n",tsk);
+
 	if(tsk == &init_task_union.task)
 		return ;
 
-	if(list_is_empty(&task_schedule.task_queue.list)) {
-		
-	} else {
+	if(list_is_empty(&task_schedule.task_queue.list))
+	{
+	}
+	else
+	{
 		while(tmp->vrun_time < tsk->vrun_time)
 			tmp = container_of(list_next(&tmp->list),struct task_struct,list);
 	}
 
 	list_add_to_before(&tmp->list,&tsk->list);
+
 	task_schedule.running_task_count += 1;
 }
 
 void schedule() {
 	struct task_struct *tsk = NULL;
 
-	current->flags &= ~NEED_SCHEDULE;
+	now_task->flags &= ~NEED_SCHEDULE;
 	tsk = get_next_task();
 
 	color_printk(RED,BLACK,"#schedule:%d#\n",jiffies);
+	// color_printk(BLACK,WHITE,"[schedule]now_task->vrun_time:%ld,tsk:%ld\t\n",now_task->vrun_time, tsk->vrun_time);
+	// color_printk(BLACK,WHITE,"[schedule]now_task:%018lx,tsk:%018lx\t\n",now_task, tsk);
 	
-	if(current->vrun_time >= tsk->vrun_time) {
-		if(current->state == TASK_RUNNING)
-			insert_task_queue(current);
+	if(now_task->vrun_time >= tsk->vrun_time) {
+		if(now_task->state == TASK_RUNNING)
+			insert_task_queue(now_task);
 			
 		if(!task_schedule.CPU_exec_task_jiffies)
 			switch(tsk->priority) {
@@ -60,8 +74,8 @@ void schedule() {
 					task_schedule.CPU_exec_task_jiffies = 4/task_schedule.running_task_count*3;
 					break;
 			}
-		
-		switch_to(current,tsk);	
+		// color_printk(RED,WHITE,"case 1\t\n");
+		switch_to(now_task,tsk);	
 	} else {
 		insert_task_queue(tsk);
 		
@@ -76,6 +90,7 @@ void schedule() {
 					task_schedule.CPU_exec_task_jiffies = 4/task_schedule.running_task_count*3;
 					break;
 			}
+		// color_printk(BLUE,WHITE,"case 2\t\n");
 	}
 }
 
@@ -87,4 +102,5 @@ void schedule_init() {
 
 	task_schedule.running_task_count = 1;
 	task_schedule.CPU_exec_task_jiffies = 4;
+	now_task = current;
 }

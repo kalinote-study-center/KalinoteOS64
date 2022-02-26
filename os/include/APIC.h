@@ -4,6 +4,7 @@
 #define __APIC_H__
 
 #include <ptrace.h>
+#include <interrupt.h>
 
 /*
 * 0~255 IDT
