@@ -11,9 +11,6 @@ struct schedule {
 	struct task_struct task_queue;		/* 准备就绪的任务队列的队列头 */
 };
 
-struct task_struct *now_task;				/* 指向当前进程PCB(仅用于异常和中断处理，不知道为什么，中断时无法通过current宏获得正确的PCB) */
-extern struct schedule task_schedule;
-
 void schedule();
 void schedule_init();
 struct task_struct *get_next_task();

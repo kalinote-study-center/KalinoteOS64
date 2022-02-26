@@ -2,6 +2,7 @@
 #include <layer.h>
 #include <types.h>
 #include <memory.h>
+#include <printk.h>
 
 struct layer_controller *layer_controller_init(struct layer *f_layer) {
 	/* 初始化图层管理系统 */

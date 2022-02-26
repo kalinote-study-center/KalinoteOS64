@@ -34,7 +34,8 @@ OLDSS	=	0xb8
 /* PCB结构体中相关数据的偏移 */
 TSK_STATE	=	0x00
 TSK_FLAGS	=	0x08
-TSK_SIGNAL	=	0x10
+TSK_PREEMPT	=	0x10
+TSK_SIGNAL	=	0x18
 
 RESTORE_ALL:
 	popq	%r15;		
@@ -72,24 +73,30 @@ ret_from_exception:
 	
 ENTRY(ret_from_intr)
 	movq	$-1,	%rcx
-	testq	softirq_status(%rip),	%rcx
+	testq	softirq_status(%rip),	%rcx	////check softirq
 	jnz	softirq_handler
 	GET_CURRENT(%rbx)
-	movq	TSK_FLAGS(%rbx),	%rcx
-	testq	$2,	%rcx
-	jnz	reschedule
-	jmp	RESTORE_ALL
-
-softirq_handler:
-	callq	do_softirq
-	GET_CURRENT(%rbx)
-	movq	TSK_FLAGS(%rbx),	%rcx
+	movq	TSK_PREEMPT(%rbx),	%rcx		////check preempt
+	cmpq	$0,	%rcx
+	jne		RESTORE_ALL
+	movq	TSK_FLAGS(%rbx),	%rcx		////try schedule
 	testq	$2,	%rcx
 	jnz	reschedule
 	jmp	RESTORE_ALL	
 
+softirq_handler:
+	callq	do_softirq
+	GET_CURRENT(%rbx)
+	movq	TSK_PREEMPT(%rbx),	%rcx		////check preempt
+	cmpq	$0,	%rcx
+	jne		RESTORE_ALL
+	movq	TSK_FLAGS(%rbx),	%rcx		////try schedule
+	testq	$2,	%rcx
+	jnz	reschedule
+	jmp	RESTORE_ALL		
+
 reschedule:
-	callq	schedule
+	callq	schedule						////do schedule
 	jmp	RESTORE_ALL
 
 

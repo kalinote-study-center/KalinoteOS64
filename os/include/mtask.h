@@ -3,11 +3,11 @@
 #ifndef __MTASK_H__
 #define __MTASK_H__
 
-#include <memory.h>
 #include <lib.h>	/* List结构 */
 #include <types.h>
 #include <cpu.h>
 #include <ptrace.h>
+#include <memory.h>
 
 #define KERNEL_CS 	(0x08)
 #define	KERNEL_DS 	(0x10)
@@ -79,6 +79,7 @@ struct task_struct
 {
 	volatile long state;
 	unsigned long flags;
+	long preempt_count;
 	long signal;
 
 	struct mm_struct *mm;
@@ -110,6 +111,7 @@ union task_union
 {			\
 	.state = TASK_UNINTERRUPTIBLE,		\
 	.flags = PF_KTHREAD,		\
+	.preempt_count = 0,		\
 	.signal = 0,		\
 	.mm = &init_mm,			\
 	.thread = &init_thread,		\
@@ -215,5 +217,8 @@ extern struct mm_struct init_mm;
 extern struct thread_struct init_thread;
 
 extern struct tss_struct init_tss[NR_CPUS];
+
+extern struct task_struct *now_task;				/* 指向当前进程PCB(仅用于异常和中断处理，不知道为什么，中断时无法通过current宏获得正确的PCB) */
+extern struct schedule task_schedule;
 
 #endif

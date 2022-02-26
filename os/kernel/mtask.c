@@ -10,6 +10,7 @@
 #include <timer.h>
 
 /* 全局变量 */
+struct task_struct *now_task;
 struct mm_struct init_mm = {0};
 struct schedule task_schedule;
 struct thread_struct init_thread = 
@@ -142,6 +143,7 @@ unsigned long do_fork(struct pt_regs * regs, unsigned long clone_flags, unsigned
 
 	tsk->priority = 2;
 	tsk->pid++;
+	tsk->preempt_count = 0;
 	tsk->state = TASK_UNINTERRUPTIBLE;
 
 	thd = (struct thread_struct *)(tsk + 1);
@@ -255,7 +257,7 @@ inline void __switch_to(struct task_struct *prev,struct task_struct *next) {
 
 
 void task_init() {
-	struct task_struct *tmp = NULL;
+	// struct task_struct *tmp = NULL;
 
 	init_mm.pgd = (pml4t_t *)Global_CR3;
 
@@ -294,6 +296,7 @@ void task_init() {
 	/* 创建init进程 */
 	kernel_thread(init,10,CLONE_FS | CLONE_FILES | CLONE_SIGNAL);
 
+	init_task_union.task.preempt_count = 0;
 	init_task_union.task.state = TASK_RUNNING;
 
 	now_task = current;
