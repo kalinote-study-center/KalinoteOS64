@@ -22,7 +22,7 @@ CFLAGS = -fno-stack-protector -mcmodel=large -fno-builtin -m64 $(INCLUDE)
 INCLUDE = -I include
 OBJ = obj/head.o obj/entry.o obj/APU_boot.o obj/main.o obj/printk.o obj/trap.o obj/memory.o obj/interrupt.o \
 		obj/mtask.o obj/cpu.o obj/PIC.o obj/SMP.o obj/time.o obj/softirq.o obj/timer.o obj/schedule.o \
-		obj/fat32.o $(DRIVER_OBJ) $(GRAPHIC_OBJ)
+		obj/fat32.o obj/VFS.o $(DRIVER_OBJ) $(GRAPHIC_OBJ)
 
 DRIVER_OBJ = obj/keyboard.o obj/mouse.o obj/disk.o obj/PIT.o
 
@@ -93,6 +93,8 @@ obj/timer.o:	kernel/timer.c
 obj/schedule.o:	kernel/schedule.c
 	gcc  $(CFLAGS) -c $< -o $@
 obj/fat32.o:	kernel/fat32.c
+	gcc  $(CFLAGS) -c $< -o $@
+obj/VFS.o:	kernel/VFS.c
 	gcc  $(CFLAGS) -c $< -o $@
 
 # driver
