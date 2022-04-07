@@ -116,5 +116,7 @@ struct FAT32_LongDirectory {
 }__attribute__((packed));
 
 void DISK1_FAT32_FS_init();
+unsigned int DISK1_FAT32_read_FAT_Entry(unsigned int fat_entry);
+unsigned long DISK1_FAT32_write_FAT_Entry(unsigned int fat_entry,unsigned int value);
 
 #endif

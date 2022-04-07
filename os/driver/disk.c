@@ -117,7 +117,13 @@ void read_handler(unsigned long nr, unsigned long parameter) {
 	if(io_in8(PORT_DISK1_STATUS_CMD) & DISK_STATUS_ERROR)
 		color_printk(RED,BLACK,"read_handler:%#010x\n",io_in8(PORT_DISK1_ERR_FEATURE));
 	else
-		port_insw(PORT_DISK1_DATA,node->buffer,256);
+		port_insw(PORT_DISK1_DATA,node->buffer, 256);
+
+	node->count--;
+	if(node->count) {
+		node->buffer += 512;
+		return;
+	}
 
 	end_request(node);
 }
@@ -127,6 +133,15 @@ void write_handler(unsigned long nr, unsigned long parameter) {
 
 	if(io_in8(PORT_DISK1_STATUS_CMD) & DISK_STATUS_ERROR)
 		color_printk(RED,BLACK,"write_handler:%#010x\n",io_in8(PORT_DISK1_ERR_FEATURE));
+
+	node->count--;
+	if(node->count) {
+		node->buffer += 512;
+		while(!(io_in8(PORT_DISK1_STATUS_CMD) & DISK_STATUS_REQ))
+			io_nop();
+		port_outsw(PORT_DISK1_DATA,node->buffer,256);
+		return;
+	}
 
 	end_request(node);
 }
