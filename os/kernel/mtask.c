@@ -9,8 +9,9 @@
 #include <printk.h>
 #include <timer.h>
 
+
 /* 全局变量 */
-struct task_struct *now_task;
+struct task_struct *now_task[NR_CPUS];
 struct mm_struct init_mm = {0};
 struct schedule task_schedule;
 struct thread_struct init_thread = 
@@ -25,7 +26,8 @@ struct thread_struct init_thread =
 };
 
 union task_union init_task_union __attribute__((__section__ (".data.init_task"))) = {INIT_TASK(init_task_union.task)};
-struct task_struct *init_task[NR_CPUS] = {&init_task_union.task,0};
+// struct task_struct *init_task[NR_CPUS] = {&init_task_union.task,0};
+struct task_struct *init_task[NR_CPUS] = {&init_task_union.task};
 struct tss_struct init_tss[NR_CPUS] = { [0 ... NR_CPUS-1] = INIT_TSS };
 
 system_call_t system_call_table[MAX_SYSTEM_CALL_NR] = 
@@ -37,12 +39,15 @@ system_call_t system_call_table[MAX_SYSTEM_CALL_NR] =
 /* 全局变量 */
 
 unsigned long no_system_call(struct pt_regs * regs) {
-	color_printk(RED,BLACK,"no_system_call is calling,NR:%#04x\n",regs->rax);
+	color_printk(RED,BLACK,"[mtask]no_system_call is calling,NR:%#04x\n",regs->rax);
 	return -1;
 }
 
 unsigned long sys_printf(struct pt_regs * regs) {
 	color_printk(BLACK,WHITE,(char *)regs->rdi);
+
+	color_printk(RED,BLACK,"[mtask]FAT32 init \n");
+	DISK1_FAT32_FS_init();
 	return 1;
 }
 
@@ -246,13 +251,13 @@ inline void __switch_to(struct task_struct *prev,struct task_struct *next) {
 	wrmsr(0x175,next->thread->rsp0);
 
 	/* 设定当前运行的task结构 */
-	now_task = next;
+	now_task[0] = next;
 
-	color_printk(RED,YELLOW,"[mtask]prev->thread->rsp0:%#018lx\t",prev->thread->rsp0);
+//	color_printk(RED,YELLOW,"[mtask]prev->thread->rsp0:%#018lx\t",prev->thread->rsp0);
 	color_printk(RED,YELLOW,"[mtask]prev->thread->rsp :%#018lx\n",prev->thread->rsp);
-	color_printk(RED,YELLOW,"[mtask]next->thread->rsp0:%#018lx\t",next->thread->rsp0);
+//	color_printk(color,BLACK,"[mtask]next->thread->rsp0:%#018lx\t",next->thread->rsp0);
 	color_printk(RED,YELLOW,"[mtask]next->thread->rsp :%#018lx\n",next->thread->rsp);
-	color_printk(RED,YELLOW,"[mtask]now_task :%#018lx\n",now_task);
+//	color_printk(RED,YELLOW,"[mtask]now_task[0] :%#018lx\n",now_task[0]);
 }
 
 
@@ -299,8 +304,8 @@ void task_init() {
 	init_task_union.task.preempt_count = 0;
 	init_task_union.task.state = TASK_RUNNING;
 
-	now_task = current;
-	color_printk(BLACK,WHITE,"[mtask]current:%018lx,current->vrun_time:%ld\t\n",current, current->vrun_time);
+	now_task[0] = current;
+	// color_printk(BLACK,WHITE,"[mtask]current:%018lx,current->vrun_time:%ld\t\n",current, current->vrun_time);
 
 	// tmp = container_of(list_next(&task_schedule.task_queue.list),struct task_struct,list);
 	// tmp = &init_task_union.task;

@@ -492,7 +492,8 @@ void do_IRQ(struct pt_regs * regs,unsigned long nr)	{
 				irq->handler(nr,irq->parameter,regs);
 			if(irq->controller != NULL && irq->controller->ack != NULL)
 				irq->controller->ack(nr);
-		}	break;
+		}
+			break;
 		case 0x80:	/* IPI通信信号 */
 			color_printk(RED,BLACK,"[APIC]SMP IPI :%d\n",nr);
 			Local_APIC_edge_level_ack(nr);

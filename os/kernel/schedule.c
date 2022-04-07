@@ -52,16 +52,15 @@ void insert_task_queue(struct task_struct *tsk) {
 void schedule() {
 	struct task_struct *tsk = NULL;
 
-	now_task->flags &= ~NEED_SCHEDULE;
+	now_task[0]->flags &= ~NEED_SCHEDULE;
 	tsk = get_next_task();
 
-	color_printk(RED,BLACK,"#schedule:%d#\n",jiffies);
-	// color_printk(BLACK,WHITE,"[schedule]now_task->vrun_time:%ld,tsk:%ld\t\n",now_task->vrun_time, tsk->vrun_time);
-	// color_printk(BLACK,WHITE,"[schedule]now_task:%018lx,tsk:%018lx\t\n",now_task, tsk);
+	color_printk(RED,BLACK,"RFLAGS:%#018lx\n",get_rflags());
+	color_printk(RED,BLACK,"#schedule:%ld#%ld|%ld\n",jiffies,now_task[0]->vrun_time,tsk->vrun_time);
 	
-	if(now_task->vrun_time >= tsk->vrun_time) {
-		if(now_task->state == TASK_RUNNING)
-			insert_task_queue(now_task);
+	if(now_task[0]->vrun_time >= tsk->vrun_time || now_task[0]->state != TASK_RUNNING) {
+		if(now_task[0]->state == TASK_RUNNING)
+			insert_task_queue(now_task[0]);
 			
 		if(!task_schedule.CPU_exec_task_jiffies)
 			switch(tsk->priority) {
@@ -75,7 +74,7 @@ void schedule() {
 					break;
 			}
 		// color_printk(RED,WHITE,"case 1\t\n");
-		switch_to(now_task,tsk);	
+		switch_to(now_task[0],tsk);	
 	} else {
 		insert_task_queue(tsk);
 		
@@ -102,5 +101,5 @@ void schedule_init() {
 
 	task_schedule.running_task_count = 1;
 	task_schedule.CPU_exec_task_jiffies = 4;
-	now_task = current;
+	now_task[0] = current;
 }

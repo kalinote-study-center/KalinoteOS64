@@ -105,33 +105,37 @@ void KaliKernel(void) {
 	color_printk(RED,BLACK,"[init]mouse init \n");
 	mouse_init();
 
-	color_printk(RED,BLACK,"[init]ICR init \n");	
-	SMP_init();
-	
-	*local_APIC_map.virtual_icr_high_address = 0;
-	*local_APIC_map.virtual_icr_low_address = 0xc4500;	//INIT IPI
-	
-	for(global_i = 1;global_i < 8;) {
-		spin_lock(&SMP_lock);
-		
-		_stack_start = (unsigned long)kmalloc(STACK_SIZE,0) + STACK_SIZE;
-		tss = (unsigned int *)kmalloc(128,0);
-		set_tss_descriptor(10 + global_i * 2,tss);
-		set_tss64(tss,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start);
-	
-		*local_APIC_map.virtual_icr_high_address = (global_i << 24);		/* 指定投递目标 */
-		*local_APIC_map.virtual_icr_low_address = 0x620;	//Start-up IPI
-		*local_APIC_map.virtual_icr_high_address = (global_i << 24);
-		*local_APIC_map.virtual_icr_low_address = 0x620;	//Start-up IPI
-	}
-	
-	*local_APIC_map.virtual_icr_high_address = (1 << 24);	/* 目标处理器为1号APU */
-	*local_APIC_map.virtual_icr_low_address = 0xc8;
-	*local_APIC_map.virtual_icr_high_address = (1 << 24);	/* 目标处理器为1号APU */
-	*local_APIC_map.virtual_icr_low_address = 0xc9;
-	
-	while(global_i < 8)		/* 为了防止混乱，等待AP处理器初始化结束再继续执行 */
-		io_hlt();
+	color_printk(RED,BLACK,"[init]disk init \n");
+	disk_init();
+
+	/* 暂时不启用其他处理核心(等系统更完善以后再来搞这一部分) */
+	// color_printk(RED,BLACK,"[init]ICR init \n");	
+	// SMP_init();
+	// 
+	// *local_APIC_map.virtual_icr_high_address = 0;
+	// *local_APIC_map.virtual_icr_low_address = 0xc4500;	//INIT IPI
+	// 
+	// for(global_i = 1;global_i < 8;) {
+	// 	spin_lock(&SMP_lock);
+	// 	
+	// 	_stack_start = (unsigned long)kmalloc(STACK_SIZE,0) + STACK_SIZE;
+	// 	tss = (unsigned int *)kmalloc(128,0);
+	// 	set_tss_descriptor(10 + global_i * 2,tss);
+	// 	set_tss64(tss,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start,_stack_start);
+	// 
+	// 	*local_APIC_map.virtual_icr_high_address = (global_i << 24);		/* 指定投递目标 */
+	// 	*local_APIC_map.virtual_icr_low_address = 0x620;	//Start-up IPI
+	// 	*local_APIC_map.virtual_icr_high_address = (global_i << 24);
+	// 	*local_APIC_map.virtual_icr_low_address = 0x620;	//Start-up IPI
+	// }
+	// 
+	// *local_APIC_map.virtual_icr_high_address = (1 << 24);	/* 目标处理器为1号APU */
+	// *local_APIC_map.virtual_icr_low_address = 0xc8;
+	// *local_APIC_map.virtual_icr_high_address = (1 << 24);	/* 目标处理器为1号APU */
+	// *local_APIC_map.virtual_icr_low_address = 0xc9;
+	// 
+	// while(global_i < 8)		/* 为了防止混乱，等待AP处理器初始化结束再继续执行 */
+	// 	io_hlt();
 
 	color_printk(RED,BLACK,"[init]timer init \n");
 	timer_init();
@@ -144,6 +148,7 @@ void KaliKernel(void) {
 	task_init();
 
 	// init_screen(printk_info.buf, printk_info.screen_x, printk_info.screen_y);		/* 初始化屏幕图形界面 */
+	/* 图形部分应该单独作为一个任务进行处理 */
 	color_printk(BLACK,WHITE,"[init]current:%018lx,current->vrun_time:%ld\t\n",current, current->vrun_time);
 
 	while(1) {

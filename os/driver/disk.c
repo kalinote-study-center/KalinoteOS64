@@ -1,97 +1,108 @@
 /* IDE硬盘驱动程序 */
 #include <disk.h>
-#include <interrupt.h>
 #include <APIC.h>
 #include <memory.h>
 #include <printk.h>
 #include <lib.h>
+#include <block.h>
 #include <asm.h>
 
+/* 全局变量 */
 static int disk_flags = 0;
 
-void end_request() {
+struct request_queue disk_request;
+struct block_device_operation IDE_device_operation;
+/* 全局变量 */
+
+void end_request(struct block_buffer_node * node) {
+	if(node == NULL)
+		color_printk(RED,BLACK,"end_request error\n");
+
+	node->wait_queue.tsk->state = TASK_RUNNING;
+	insert_task_queue(node->wait_queue.tsk);
+	node->wait_queue.tsk->flags |= NEED_SCHEDULE;
+
 	kfree((unsigned long *)disk_request.in_using);
 	disk_request.in_using = NULL;
-
-	disk_flags = 0;
 
 	if(disk_request.block_request_count)
 		cmd_out();
 }
 
 void add_request(struct block_buffer_node * node) {
-	list_add_to_before(&disk_request.queue_list,&node->list);
+	list_add_to_before(&disk_request.wait_queue_list.wait_list,&node->wait_queue.wait_list);
 	disk_request.block_request_count++;
 }
 
 long cmd_out() {
-	struct block_buffer_node * node = disk_request.in_using = container_of(list_next(&disk_request.queue_list),struct block_buffer_node,list);
-	list_del(&disk_request.in_using->list);
+	wait_queue_T *wait_queue_tmp = container_of(list_next(&disk_request.wait_queue_list.wait_list),wait_queue_T,wait_list);
+	struct block_buffer_node * node = disk_request.in_using = container_of(wait_queue_tmp,struct block_buffer_node,wait_queue);
+	list_del(&disk_request.in_using->wait_queue.wait_list);
 	disk_request.block_request_count--;
 
-	while(io_in8(PORT_DISK0_STATUS_CMD) & DISK_STATUS_BUSY)
+	while(io_in8(PORT_DISK1_STATUS_CMD) & DISK_STATUS_BUSY)
 		io_nop();
 
 	switch(node->cmd) {
 		case ATA_WRITE_CMD:	
 
-			io_out8(PORT_DISK0_DEVICE,0x40);
+			io_out8(PORT_DISK1_DEVICE,0x40);
 
-			io_out8(PORT_DISK0_ERR_FEATURE,0);
-			io_out8(PORT_DISK0_SECTOR_CNT,(node->count >> 8) & 0xff);
-			io_out8(PORT_DISK0_SECTOR_LOW ,(node->LBA >> 24) & 0xff);
-			io_out8(PORT_DISK0_SECTOR_MID ,(node->LBA >> 32) & 0xff);
-			io_out8(PORT_DISK0_SECTOR_HIGH,(node->LBA >> 40) & 0xff);
+			io_out8(PORT_DISK1_ERR_FEATURE,0);
+			io_out8(PORT_DISK1_SECTOR_CNT,(node->count >> 8) & 0xff);
+			io_out8(PORT_DISK1_SECTOR_LOW ,(node->LBA >> 24) & 0xff);
+			io_out8(PORT_DISK1_SECTOR_MID ,(node->LBA >> 32) & 0xff);
+			io_out8(PORT_DISK1_SECTOR_HIGH,(node->LBA >> 40) & 0xff);
 
-			io_out8(PORT_DISK0_ERR_FEATURE,0);
-			io_out8(PORT_DISK0_SECTOR_CNT,node->count & 0xff);
-			io_out8(PORT_DISK0_SECTOR_LOW,node->LBA & 0xff);
-			io_out8(PORT_DISK0_SECTOR_MID,(node->LBA >> 8) & 0xff);
-			io_out8(PORT_DISK0_SECTOR_HIGH,(node->LBA >> 16) & 0xff);
+			io_out8(PORT_DISK1_ERR_FEATURE,0);
+			io_out8(PORT_DISK1_SECTOR_CNT,node->count & 0xff);
+			io_out8(PORT_DISK1_SECTOR_LOW,node->LBA & 0xff);
+			io_out8(PORT_DISK1_SECTOR_MID,(node->LBA >> 8) & 0xff);
+			io_out8(PORT_DISK1_SECTOR_HIGH,(node->LBA >> 16) & 0xff);
 
-			while(!(io_in8(PORT_DISK0_STATUS_CMD) & DISK_STATUS_READY))
+			while(!(io_in8(PORT_DISK1_STATUS_CMD) & DISK_STATUS_READY))
 				io_nop();
-			io_out8(PORT_DISK0_STATUS_CMD,node->cmd);
+			io_out8(PORT_DISK1_STATUS_CMD,node->cmd);
 
-			while(!(io_in8(PORT_DISK0_STATUS_CMD) & DISK_STATUS_REQ))
+			while(!(io_in8(PORT_DISK1_STATUS_CMD) & DISK_STATUS_REQ))
 				io_nop();
-			port_outsw(PORT_DISK0_DATA,node->buffer,256);
+			port_outsw(PORT_DISK1_DATA,node->buffer,256);
 			break;
 
 		case ATA_READ_CMD:
 
-			io_out8(PORT_DISK0_DEVICE,0x40);
+			io_out8(PORT_DISK1_DEVICE,0x40);
 
-			io_out8(PORT_DISK0_ERR_FEATURE,0);
-			io_out8(PORT_DISK0_SECTOR_CNT,(node->count >> 8) & 0xff);
-			io_out8(PORT_DISK0_SECTOR_LOW ,(node->LBA >> 24) & 0xff);
-			io_out8(PORT_DISK0_SECTOR_MID ,(node->LBA >> 32) & 0xff);
-			io_out8(PORT_DISK0_SECTOR_HIGH,(node->LBA >> 40) & 0xff);
+			io_out8(PORT_DISK1_ERR_FEATURE,0);
+			io_out8(PORT_DISK1_SECTOR_CNT,(node->count >> 8) & 0xff);
+			io_out8(PORT_DISK1_SECTOR_LOW ,(node->LBA >> 24) & 0xff);
+			io_out8(PORT_DISK1_SECTOR_MID ,(node->LBA >> 32) & 0xff);
+			io_out8(PORT_DISK1_SECTOR_HIGH,(node->LBA >> 40) & 0xff);
 
-			io_out8(PORT_DISK0_ERR_FEATURE,0);
-			io_out8(PORT_DISK0_SECTOR_CNT,node->count & 0xff);
-			io_out8(PORT_DISK0_SECTOR_LOW,node->LBA & 0xff);
-			io_out8(PORT_DISK0_SECTOR_MID,(node->LBA >> 8) & 0xff);
-			io_out8(PORT_DISK0_SECTOR_HIGH,(node->LBA >> 16) & 0xff);
+			io_out8(PORT_DISK1_ERR_FEATURE,0);
+			io_out8(PORT_DISK1_SECTOR_CNT,node->count & 0xff);
+			io_out8(PORT_DISK1_SECTOR_LOW,node->LBA & 0xff);
+			io_out8(PORT_DISK1_SECTOR_MID,(node->LBA >> 8) & 0xff);
+			io_out8(PORT_DISK1_SECTOR_HIGH,(node->LBA >> 16) & 0xff);
 
-			while(!(io_in8(PORT_DISK0_STATUS_CMD) & DISK_STATUS_READY))
+			while(!(io_in8(PORT_DISK1_STATUS_CMD) & DISK_STATUS_READY))
 				io_nop();
-			io_out8(PORT_DISK0_STATUS_CMD,node->cmd);
+			io_out8(PORT_DISK1_STATUS_CMD,node->cmd);
 			break;
 			
 		case GET_IDENTIFY_DISK_CMD:
 
-			io_out8(PORT_DISK0_DEVICE,0xe0);
+			io_out8(PORT_DISK1_DEVICE,0xe0);
 			
-			io_out8(PORT_DISK0_ERR_FEATURE,0);
-			io_out8(PORT_DISK0_SECTOR_CNT,node->count & 0xff);
-			io_out8(PORT_DISK0_SECTOR_LOW,node->LBA & 0xff);
-			io_out8(PORT_DISK0_SECTOR_MID,(node->LBA >> 8) & 0xff);
-			io_out8(PORT_DISK0_SECTOR_HIGH,(node->LBA >> 16) & 0xff);
+			io_out8(PORT_DISK1_ERR_FEATURE,0);
+			io_out8(PORT_DISK1_SECTOR_CNT,node->count & 0xff);
+			io_out8(PORT_DISK1_SECTOR_LOW,node->LBA & 0xff);
+			io_out8(PORT_DISK1_SECTOR_MID,(node->LBA >> 8) & 0xff);
+			io_out8(PORT_DISK1_SECTOR_HIGH,(node->LBA >> 16) & 0xff);
 
-			while(!(io_in8(PORT_DISK0_STATUS_CMD) & DISK_STATUS_READY))
+			while(!(io_in8(PORT_DISK1_STATUS_CMD) & DISK_STATUS_READY))
 				io_nop();			
-			io_out8(PORT_DISK0_STATUS_CMD,node->cmd);
+			io_out8(PORT_DISK1_STATUS_CMD,node->cmd);
 
 		default:
 			color_printk(BLACK,WHITE,"ATA CMD Error\n");
@@ -103,35 +114,37 @@ long cmd_out() {
 void read_handler(unsigned long nr, unsigned long parameter) {
 	struct block_buffer_node * node = ((struct request_queue *)parameter)->in_using;
 	
-	if(io_in8(PORT_DISK0_STATUS_CMD) & DISK_STATUS_ERROR)
-		color_printk(RED,BLACK,"read_handler:%#010x\n",io_in8(PORT_DISK0_ERR_FEATURE));
+	if(io_in8(PORT_DISK1_STATUS_CMD) & DISK_STATUS_ERROR)
+		color_printk(RED,BLACK,"read_handler:%#010x\n",io_in8(PORT_DISK1_ERR_FEATURE));
 	else
-		port_insw(PORT_DISK0_DATA,node->buffer,256);
+		port_insw(PORT_DISK1_DATA,node->buffer,256);
 
-	end_request();
+	end_request(node);
 }
 
 void write_handler(unsigned long nr, unsigned long parameter) {
-	if(io_in8(PORT_DISK0_STATUS_CMD) & DISK_STATUS_ERROR)
-		color_printk(RED,BLACK,"write_handler:%#010x\n",io_in8(PORT_DISK0_ERR_FEATURE));
+	struct block_buffer_node * node = ((struct request_queue *)parameter)->in_using;
 
-	end_request();
+	if(io_in8(PORT_DISK1_STATUS_CMD) & DISK_STATUS_ERROR)
+		color_printk(RED,BLACK,"write_handler:%#010x\n",io_in8(PORT_DISK1_ERR_FEATURE));
+
+	end_request(node);
 }
 
 void other_handler(unsigned long nr, unsigned long parameter) {
 	struct block_buffer_node * node = ((struct request_queue *)parameter)->in_using;
 
-	if(io_in8(PORT_DISK0_STATUS_CMD) & DISK_STATUS_ERROR)
-		color_printk(RED,BLACK,"other_handler:%#010x\n",io_in8(PORT_DISK0_ERR_FEATURE));
+	if(io_in8(PORT_DISK1_STATUS_CMD) & DISK_STATUS_ERROR)
+		color_printk(RED,BLACK,"other_handler:%#010x\n",io_in8(PORT_DISK1_ERR_FEATURE));
 	else
-		port_insw(PORT_DISK0_DATA,node->buffer,256);
+		port_insw(PORT_DISK1_DATA,node->buffer,256);
 
-	end_request();
+	end_request(node);
 }
 
 struct block_buffer_node * make_request(long cmd,unsigned long blocks,long count,unsigned char * buffer) {
 	struct block_buffer_node * node = (struct block_buffer_node *)kmalloc(sizeof(struct block_buffer_node),0);
-	list_init(&node->list);
+	wait_queue_init(&node->wait_queue,now_task[0]);
 
 	switch(cmd) {
 		case ATA_READ_CMD:
@@ -144,7 +157,7 @@ struct block_buffer_node * make_request(long cmd,unsigned long blocks,long count
 			node->cmd = ATA_WRITE_CMD;
 			break;
 
-		default:///
+		default:
 			node->end_handler = other_handler;
 			node->cmd = cmd;
 			break;
@@ -165,18 +178,17 @@ void submit(struct block_buffer_node * node) {
 }
 
 void wait_for_finish() {
-	disk_flags = 1;
-	while(disk_flags)
-		io_nop();
+	now_task[0]->state = TASK_UNINTERRUPTIBLE;
+	schedule();
 }
 
 long IDE_open() {
-	color_printk(BLACK,WHITE,"DISK0 Opened\n");
+	color_printk(BLACK,WHITE,"DISK1 Opened\n");
 	return 1;
 }
 
 long IDE_close() {
-	color_printk(BLACK,WHITE,"DISK0 Closed\n");
+	color_printk(BLACK,WHITE,"DISK1 Closed\n");
 	return 1;
 }
 
@@ -223,13 +235,14 @@ hw_int_controller disk_int_controller = {
 
 void disk_handler(unsigned long nr, unsigned long parameter, struct pt_regs * regs) {
 	struct block_buffer_node * node = ((struct request_queue *)parameter)->in_using;
+	color_printk(BLACK,WHITE,"[disk]disk_handler\n");
 	node->end_handler(nr,parameter);
 }
 
 void disk_init() {
 	struct IO_APIC_RET_entry entry;
 
-	entry.vector = 0x2e;
+	entry.vector = 0x2f;
 	entry.deliver_mode = APIC_ICR_IOAPIC_Fixed ;
 	entry.dest_mode = ICR_IOAPIC_DELV_PHYSICAL;
 	entry.deliver_status = APIC_ICR_IOAPIC_Idle;
@@ -243,15 +256,13 @@ void disk_init() {
 	entry.destination.physical.phy_dest = 0;
 	entry.destination.physical.reserved2 = 0;
 
-	register_irq(0x2e, &entry , &disk_handler, (unsigned long)&disk_request, &disk_int_controller, "disk0");
+	register_irq(0x2f, &entry , &disk_handler, (unsigned long)&disk_request, &disk_int_controller, "disk1");
 
-	io_out8(PORT_DISK0_ALT_STA_CTL,0);
+	io_out8(PORT_DISK1_ALT_STA_CTL,0);
 	
-	list_init(&disk_request.queue_list);
+	wait_queue_init(&disk_request.wait_queue_list,NULL);
 	disk_request.in_using = NULL;
 	disk_request.block_request_count = 0;
-	
-	disk_flags = 0;
 }
 
 void disk_exit() {

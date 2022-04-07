@@ -5,6 +5,7 @@
 
 #include <lib.h>
 #include <block.h>
+#include <semaphore.h>
 
 #define PORT_DISK0_DATA			0x1f0
 #define	PORT_DISK0_ERR_FEATURE	0x1f1
@@ -46,20 +47,21 @@ struct block_buffer_node {
 	unsigned char * buffer;
 	void(* end_handler)(unsigned long nr, unsigned long parameter);
 
-	struct List list;
+	wait_queue_T wait_queue;
 };
 
 struct request_queue {
-	struct List queue_list;
+//	struct List queue_list;
+	wait_queue_T wait_queue_list;
 	struct block_buffer_node *in_using;
 	long block_request_count;
 };
 
-struct request_queue disk_request;
-struct block_device_operation IDE_device_operation;
+extern struct request_queue disk_request;
+extern struct block_device_operation IDE_device_operation;
 
-struct Disk_Identify_Info	//ATA/ATAPI-8
-{
+struct Disk_Identify_Info {
+	//ATA/ATAPI-8
 	//	0	General configuration bit-significant information
 	unsigned short General_Config;
 

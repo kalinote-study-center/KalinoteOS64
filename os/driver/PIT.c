@@ -10,6 +10,8 @@
 #include <mtask.h>
 #include <schedule.h>
 
+volatile unsigned long temp_jiffies = 0;
+
 hw_int_controller PIT_int_controller =  {
 	.enable = IOAPIC_enable,
 	.disable = IOAPIC_disable,
@@ -19,32 +21,32 @@ hw_int_controller PIT_int_controller =  {
 };
 
 void PIT_handler(unsigned long nr, unsigned long parameter, struct pt_regs * regs) {
-	jiffies++;
+	// jiffies++;
+	temp_jiffies++;
+	if(temp_jiffies%100==0) {
+		/* 每秒进行一次PIT处理(包括时间片jiffies自增、timer检测、任务调度)，方便调试 */
+		jiffies++;
 
-	if(timer_list_head->expire_jiffies <= jiffies)
-		set_softirq_status(TIMER_SIRQ);
+		if(timer_list_head->expire_jiffies <= jiffies)
+			set_softirq_status(TIMER_SIRQ);
 
-	if(jiffies > 25)
-		return;
-	switch(now_task->priority) {
-		case 0:
-		case 1:
-			task_schedule.CPU_exec_task_jiffies--;
-			now_task->vrun_time += 1;
-			break;
-		case 2:
-		default:
-			task_schedule.CPU_exec_task_jiffies -= 2;
-			now_task->vrun_time += 2;
-			break;
+		switch(now_task[0]->priority) {
+			case 0:
+			case 1:
+				task_schedule.CPU_exec_task_jiffies--;
+				now_task[0]->vrun_time += 1;
+				break;
+			case 2:
+			default:
+				task_schedule.CPU_exec_task_jiffies -= 2;
+				now_task[0]->vrun_time += 2;
+				break;
+		}
+		
+		if(task_schedule.CPU_exec_task_jiffies <= 0)
+			now_task[0]->flags |= NEED_SCHEDULE;
 	}
 	
-	// color_printk(BLUE,WHITE,"[PIT]task_schedule.CPU_exec_task_jiffies:%ld\t\n", task_schedule.CPU_exec_task_jiffies);
-	// color_printk(BLACK,WHITE,"[PIT]now_task:%018lx,now_task->vrun_time:%ld\t\n",now_task, now_task->vrun_time);
-	
-	if(task_schedule.CPU_exec_task_jiffies <= 0)
-		now_task->flags |= NEED_SCHEDULE;
-
 }
 
 extern struct time time;

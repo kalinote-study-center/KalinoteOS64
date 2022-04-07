@@ -804,7 +804,7 @@ unsigned long slab_free(struct Slab_cache * slab_cache,void * address,unsigned l
 
 unsigned long slab_init() {
 	struct Page * page = NULL;
-	unsigned long * virtual = NULL; // get a free page and set to empty page table and return the virtual address
+	unsigned long * virtual = NULL;
 	unsigned long i,j;
 	unsigned long tmp_address = memory_management_struct.end_of_struct;
 
@@ -813,8 +813,6 @@ unsigned long slab_init() {
 		memory_management_struct.end_of_struct = memory_management_struct.end_of_struct + sizeof(struct Slab) + sizeof(long) * 10;
 
 		list_init(&kmalloc_cache_size[i].cache_pool->list);	
-
-	//////////// init sizeof struct Slab of cache size
 
 		kmalloc_cache_size[i].cache_pool->using_count = 0;
 		kmalloc_cache_size[i].cache_pool->free_count  = PAGE_2M_SIZE / kmalloc_cache_size[i].size;
@@ -834,8 +832,6 @@ unsigned long slab_init() {
 
 	}
 	
-	////////////	init page for kernel code and memory management struct
-
 	i = Virt_To_Phy(memory_management_struct.end_of_struct) >> PAGE_2M_SHIFT;
 
 	for(j = PAGE_2M_ALIGN(Virt_To_Phy(tmp_address)) >> PAGE_2M_SHIFT;j <= i;j++) {

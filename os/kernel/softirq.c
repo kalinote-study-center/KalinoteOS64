@@ -4,6 +4,11 @@
 #include <printk.h>
 #include <lib.h>
 
+/* 全局变量 */
+unsigned long softirq_status = 0;
+struct softirq softirq_vector[64] = {0};
+/* 全局变量 */
+
 void set_softirq_status(unsigned long status) {
 	softirq_status |= status;
 }

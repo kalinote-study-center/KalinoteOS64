@@ -8,6 +8,7 @@
 #include <cpu.h>
 #include <ptrace.h>
 #include <memory.h>
+#include <asm.h>
 
 #define KERNEL_CS 	(0x08)
 #define	KERNEL_DS 	(0x10)
@@ -173,6 +174,7 @@ inline	struct task_struct * get_current() {
 
 #define switch_to(prev,next)			\
 do{							\
+	io_cli();		\
 	__asm__ __volatile__ (	"pushq	%%rbp	\n\t"	\
 				"pushq	%%rax	\n\t"	\
 				"movq	%%rsp,	%0	\n\t"	\
@@ -188,6 +190,7 @@ do{							\
 				:"m"(next->thread->rsp),"m"(next->thread->rip),"D"(prev),"S"(next)	\
 				:"memory"		\
 				);			\
+	io_sti();		\
 }while(0)
 
 /*
@@ -218,7 +221,7 @@ extern struct thread_struct init_thread;
 
 extern struct tss_struct init_tss[NR_CPUS];
 
-extern struct task_struct *now_task;				/* 指向当前进程PCB(仅用于异常和中断处理，不知道为什么，中断时无法通过current宏获得正确的PCB) */
+extern struct task_struct *now_task[NR_CPUS];				/* 指向当前进程PCB(仅用于异常和中断处理，不知道为什么，中断时无法通过current宏获得正确的PCB) */
 extern struct schedule task_schedule;
 
 #endif

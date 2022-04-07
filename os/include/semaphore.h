@@ -46,8 +46,8 @@ void semaphore_up(semaphore_T * semaphore) {
 
 void __down(semaphore_T * semaphore) {
 	wait_queue_T wait;
-	wait_queue_init(&wait,current);
-	current->state = TASK_UNINTERRUPTIBLE;
+	wait_queue_init(&wait,now_task[0]);
+	now_task[0]->state = TASK_UNINTERRUPTIBLE;
 	list_add_to_before(&semaphore->wait.wait_list,&wait.wait_list);
 
 	schedule();
