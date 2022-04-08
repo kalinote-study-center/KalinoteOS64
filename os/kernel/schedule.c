@@ -55,7 +55,7 @@ void schedule() {
 	now_task[0]->flags &= ~NEED_SCHEDULE;
 	tsk = get_next_task();
 
-	color_printk(RED,BLACK,"RFLAGS:%#018lx\n",get_rflags());
+	// color_printk(RED,BLACK,"RFLAGS:%#018lx\n",get_rflags());
 	color_printk(RED,BLACK,"#schedule:%ld#%ld|%ld\n",jiffies,now_task[0]->vrun_time,tsk->vrun_time);
 	
 	if(now_task[0]->vrun_time >= tsk->vrun_time || now_task[0]->state != TASK_RUNNING) {

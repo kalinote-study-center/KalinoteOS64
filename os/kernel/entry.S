@@ -38,27 +38,27 @@ TSK_PREEMPT	=	0x10
 TSK_SIGNAL	=	0x18
 
 RESTORE_ALL:
-	popq	%r15;		
-	popq	%r14;		
-	popq	%r13;		
-	popq	%r12;		
-	popq	%r11;		
-	popq	%r10;		
-	popq	%r9;		
-	popq	%r8;		
-	popq	%rbx;		
-	popq	%rcx;		
-	popq	%rdx;		
-	popq	%rsi;		
-	popq	%rdi;		
-	popq	%rbp;		
-	popq	%rax;		
-	movq	%rax,	%ds;	
-	popq	%rax;		
-	movq	%rax,	%es;	
-	popq	%rax;		
-	addq	$0x10,	%rsp;	
-	iretq;
+	popq	%r15
+	popq	%r14
+	popq	%r13
+	popq	%r12
+	popq	%r11
+	popq	%r10
+	popq	%r9
+	popq	%r8
+	popq	%rbx
+	popq	%rcx
+	popq	%rdx
+	popq	%rsi
+	popq	%rdi
+	popq	%rbp
+	popq	%rax	
+	movq	%rax,	%ds
+	popq	%rax
+	movq	%rax,	%es
+	popq	%rax
+	addq	$0x10,	%rsp
+	iretq
 
 /**
 * #define GET_CURRENT(reg)	\
@@ -103,61 +103,67 @@ reschedule:
 /* 系统调用 */
 ENTRY(system_call)
 	sti								/* 调用SYSENTER指令会复位IF中断标志位，导致无法接受中断，在这里进行开启 */
-	subq	$0x38,	%rsp			 
-	cld;					 
+	subq	$0x38,	%rsp
+	cld
 
-	pushq	%rax;				 	
-	movq	%es,	%rax;			 	
-	pushq	%rax;				 	
-	movq	%ds,	%rax;			 	
-	pushq	%rax;				 	
-	xorq	%rax,	%rax;			 	
-	pushq	%rbp;				 	
-	pushq	%rdi;				 	
-	pushq	%rsi;				 	
-	pushq	%rdx;				 	
-	pushq	%rcx;				 
-	pushq	%rbx;				 	
-	pushq	%r8;				 	
-	pushq	%r9;				 	
-	pushq	%r10;				 
-	pushq	%r11;				 
-	pushq	%r12;				 	
-	pushq	%r13;				 
-	pushq	%r14;				 	
-	pushq	%r15;				 	
-	movq	$0x10,	%rdx;			 	
-	movq	%rdx,	%ds;			 	
-	movq	%rdx,	%es;			 
-	movq	%rsp,	%rdi			 	
-			
-	callq	system_call_function		 	////////
+	pushq	%rax
+	movq	%es,	%rax
+	pushq	%rax
+	movq	%ds,	%rax
+	pushq	%rax
+	xorq	%rax,	%rax
+	pushq	%rbp
+	pushq	%rdi
+	pushq	%rsi
+	pushq	%rdx
+	pushq	%rcx
+	pushq	%rbx
+	pushq	%r8
+	pushq	%r9
+	pushq	%r10
+	pushq	%r11
+	pushq	%r12
+	pushq	%r13
+	pushq	%r14
+	pushq	%r15
 
-ENTRY(ret_system_call)						
-	movq	%rax,	0x80(%rsp)		 
-	popq	%r15				 
-	popq	%r14				 	
-	popq	%r13				 	
-	popq	%r12				 	
-	popq	%r11				 	
-	popq	%r10				 	
-	popq	%r9				 	
-	popq	%r8				 	
-	popq	%rbx				 	
-	popq	%rcx				 	
-	popq	%rdx				 	
-	popq	%rsi				 	
-	popq	%rdi				 	
-	popq	%rbp				 	
-	popq	%rax				 	
-	movq	%rax,	%ds			 
-	popq	%rax				 
-	movq	%rax,	%es			 
+	movq	$0x10,	%rax
+	movq	%rax,	%ds
+	movq	%rax,	%es
+
+	movq	RAX(%rsp),	%rax
+	leaq	system_call_table(%rip),	%rbx
+	callq	*(%rbx,%rax,8)
+	movq	%rax,	RAX(%rsp)
+
+ENTRY(ret_system_call) 
+	popq	%r15
+	popq	%r14
+	popq	%r13
+	popq	%r12
+	popq	%r11
+	popq	%r10
+	popq	%r9
+	popq	%r8
+	popq	%rbx
+	popq	%rcx
+	popq	%rdx
+	popq	%rsi
+	popq	%rdi
+	popq	%rbp
+	popq	%rax
+	movq	%rax,	%ds
+	popq	%rax
+	movq	%rax,	%es
 	popq	%rax
 	addq	$0x38,	%rsp
+
+	xchgq	%rdx,	%r10
+	xchgq	%rcx,	%r11
+
 	sti
-	.byte	0x48		 
-	sysexit	
+	.byte	0x48
+	sysexit
 
 
 /* 下面是错误及异常 */
@@ -214,35 +220,35 @@ ENTRY(debug)
 
 ENTRY(nmi)
 	pushq	%rax
-	cld;			
-	pushq	%rax;	
-	
+	cld;
+	pushq	%rax
+
 	pushq	%rax
 	movq	%es,	%rax
 	pushq	%rax
 	movq	%ds,	%rax
 	pushq	%rax
 	xorq	%rax,	%rax
-	
-	pushq	%rbp;		
-	pushq	%rdi;		
-	pushq	%rsi;		
-	pushq	%rdx;		
-	pushq	%rcx;		
-	pushq	%rbx;		
-	pushq	%r8;		
-	pushq	%r9;		
-	pushq	%r10;		
-	pushq	%r11;		
-	pushq	%r12;		
-	pushq	%r13;		
-	pushq	%r14;		
-	pushq	%r15;
-	
-	movq	$0x10,	%rdx;	
-	movq	%rdx,	%ds;	
-	movq	%rdx,	%es;
-	
+
+	pushq	%rbp
+	pushq	%rdi
+	pushq	%rsi
+	pushq	%rdx
+	pushq	%rcx
+	pushq	%rbx
+	pushq	%r8
+	pushq	%r9
+	pushq	%r10
+	pushq	%r11
+	pushq	%r12
+	pushq	%r13
+	pushq	%r14
+	pushq	%r15
+
+	movq	$0x10,	%rdx
+	movq	%rdx,	%ds
+	movq	%rdx,	%es
+
 	movq	$0,	%rsi
 	movq	%rsp,	%rdi
 

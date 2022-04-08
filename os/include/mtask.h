@@ -199,19 +199,8 @@ do{							\
 unsigned long do_fork(struct pt_regs * regs, unsigned long clone_flags, unsigned long stack_start, unsigned long stack_size);
 void task_init();
 
-#define MAX_SYSTEM_CALL_NR 128
-
-typedef unsigned long (* system_call_t)(struct pt_regs * regs);
-
-unsigned long no_system_call(struct pt_regs * regs);
-
-unsigned long sys_printf(struct pt_regs * regs);
-
 extern void ret_system_call(void);
 extern void system_call(void);
-
-extern system_call_t system_call_table[MAX_SYSTEM_CALL_NR];
-
 
 extern struct task_struct *init_task[NR_CPUS];
 extern union task_union init_task_union;

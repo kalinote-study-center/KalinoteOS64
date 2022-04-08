@@ -8,6 +8,7 @@
 #include <schedule.h>
 #include <printk.h>
 #include <timer.h>
+#include <unistd.h>
 
 
 /* 全局变量 */
@@ -26,43 +27,32 @@ struct thread_struct init_thread =
 };
 
 union task_union init_task_union __attribute__((__section__ (".data.init_task"))) = {INIT_TASK(init_task_union.task)};
-// struct task_struct *init_task[NR_CPUS] = {&init_task_union.task,0};
 struct task_struct *init_task[NR_CPUS] = {&init_task_union.task};
 struct tss_struct init_tss[NR_CPUS] = { [0 ... NR_CPUS-1] = INIT_TSS };
 
-system_call_t system_call_table[MAX_SYSTEM_CALL_NR] = 
-{
-	[0] = no_system_call,
-	[1] = sys_printf,
-	[2 ... MAX_SYSTEM_CALL_NR-1] = no_system_call
-};
 /* 全局变量 */
 
-unsigned long no_system_call(struct pt_regs * regs) {
-	color_printk(RED,BLACK,"[mtask]no_system_call is calling,NR:%#04x\n",regs->rax);
-	return -1;
-}
-
-unsigned long sys_printf(struct pt_regs * regs) {
-	color_printk(BLACK,WHITE,(char *)regs->rdi);
-
-	color_printk(RED,BLACK,"[mtask]FAT32 init \n");
-	DISK1_FAT32_FS_init();
-	return 1;
-}
 
 void user_level_function() {
-	long ret = 0;
-	// color_printk(RED,BLACK,"[Hello World]user_level_function task is running\n");
+	int errno = 0;
 	char string[]="Hello World!\n";
 
-	__asm__	__volatile__	(	"leaq	sysexit_return_address(%%rip),	%%rdx	\n\t"
-					"movq	%%rsp,	%%rcx		\n\t"
+//	call sys_putstring
+//	int putstring(char *string);
+
+	__asm__ __volatile__	(	"pushq	%%r10	\n\t"
+					"pushq	%%r11	\n\t"
+					"leaq	sysexit_return_address(%%rip),	%%r10	\n\t"
+					"movq	%%rsp,	%%r11		\n\t"
 					"sysenter			\n\t"
 					"sysexit_return_address:	\n\t"
-					:"=a"(ret):"0"(1),"D"(string):"memory");	
-
-	// color_printk(RED,BLACK,"[Hello World]user_level_function task called sysenter,ret:%ld\n",ret);
+					"xchgq	%%rdx,	%%r10	\n\t"
+					"xchgq	%%rcx,	%%r11	\n\t"
+					"popq	%%r11	\n\t"
+					"popq	%%r10	\n\t"
+					:"=a"(errno)
+					:"0"(__NR_putstring),"D"(string)
+					:"memory");
 
 	while(1);
 }
@@ -73,8 +63,10 @@ unsigned long do_execve(struct pt_regs * regs) {
 	unsigned long * virtual = NULL;
 	struct Page * p = NULL;
 	
-	regs->rdx = 0x800000;	//RIP 应用层程序入口地址
-	regs->rcx = 0xa00000;	//RSP 应用层栈顶地址
+	// regs->rdx = 0x800000;	//RIP 应用层程序入口地址
+	// regs->rcx = 0xa00000;	//RSP 应用层栈顶地址
+	regs->r10 = 0x800000;	//RIP
+	regs->r11 = 0xa00000;	//RSP
 	regs->rax = 1;	
 	regs->ds = 0;
 	regs->es = 0;
@@ -180,11 +172,7 @@ unsigned long do_exit(unsigned long code) {
 	while(1);
 }
 
-unsigned long  system_call_function(struct pt_regs * regs) {
-	return system_call_table[regs->rax](regs);
-}
-
-extern void kernel_thread_func(void);
+void kernel_thread_func(void);
 __asm__ (
 "kernel_thread_func:	\n\t"
 "	popq	%r15	\n\t"
@@ -305,9 +293,4 @@ void task_init() {
 	init_task_union.task.state = TASK_RUNNING;
 
 	now_task[0] = current;
-	// color_printk(BLACK,WHITE,"[mtask]current:%018lx,current->vrun_time:%ld\t\n",current, current->vrun_time);
-
-	// tmp = container_of(list_next(&task_schedule.task_queue.list),struct task_struct,list);
-	// tmp = &init_task_union.task;
-	// switch_to(current,tmp);
 }

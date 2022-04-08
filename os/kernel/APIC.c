@@ -89,6 +89,7 @@ void LAPIC_pagetable_remap() {
 	
 	if(*tmp == 0) {
 		mem_addr64 *virtual = kmalloc(PAGE_4K_SIZE, 0);
+		memset(virtual,0,PAGE_4K_SIZE);
 		set_mpl4t(tmp,mk_mpl4t(Virt_To_Phy(virtual),PAGE_KERNEL_GDT));
 	}
 	
@@ -97,6 +98,7 @@ void LAPIC_pagetable_remap() {
 	tmp = Phy_To_Virt((mem_addr64 *)(*tmp & (~ 0xfffUL)) + (((mem_addr64)LAPIC_addr >> PAGE_1G_SHIFT) & 0x1ff));
 	if(*tmp == 0) {
 		mem_addr64 * virtual = kmalloc(PAGE_4K_SIZE,0);
+		memset(virtual,0,PAGE_4K_SIZE);
 		set_pdpt(tmp,mk_pdpt(Virt_To_Phy(virtual),PAGE_KERNEL_Dir));
 	}
 	
@@ -128,6 +130,7 @@ void IOAPIC_pagetable_remap() {
 	tmp = Phy_To_Virt(Global_CR3 + (((mem_addr64)IOAPIC_addr >> PAGE_GDT_SHIFT) & 0x1ff));
 	if (*tmp == 0) {
 		mem_addr64 * virtual = kmalloc(PAGE_4K_SIZE,0);
+		memset(virtual,0,PAGE_4K_SIZE);
 		set_mpl4t(tmp,mk_mpl4t(Virt_To_Phy(virtual),PAGE_KERNEL_GDT));
 	}
 
@@ -136,6 +139,7 @@ void IOAPIC_pagetable_remap() {
 	tmp = Phy_To_Virt((mem_addr64 *)(*tmp & (~ 0xfffUL)) + (((mem_addr64)IOAPIC_addr >> PAGE_1G_SHIFT) & 0x1ff));
 	if(*tmp == 0) {
 		mem_addr64 * virtual = kmalloc(PAGE_4K_SIZE,0);
+		memset(virtual,0,PAGE_4K_SIZE);
 		set_pdpt(tmp,mk_pdpt(Virt_To_Phy(virtual),PAGE_KERNEL_Dir));
 	}
 
